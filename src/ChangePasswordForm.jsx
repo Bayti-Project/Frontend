@@ -127,8 +127,8 @@ export default function ChangePasswordForm() {
           {success
             ? "تم التحديث بنجاح ✓"
             : submitting
-            ? "جارٍ الحفظ..."
-            : "تحديث كلمة المرور"}
+              ? "جارٍ الحفظ..."
+              : "تحديث كلمة المرور"}
         </button>
         <button type="button" className="cancel-btn" onClick={handleCancel}>
           إلغاء

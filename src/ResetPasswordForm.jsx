@@ -130,8 +130,8 @@ export default function ResetPasswordForm() {
         {success
           ? "تم تعيين كلمة المرور بنجاح ✓"
           : submitting
-          ? "جارٍ الحفظ..."
-          : "اعادة تعيين كلمة السر"}
+            ? "جارٍ الحفظ..."
+            : "اعادة تعيين كلمة السر"}
       </button>
 
       <a href="#" className="back-link">
