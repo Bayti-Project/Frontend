@@ -92,7 +92,6 @@ function Register() {
 
         </div>
 
-
         {/* البريد الإلكتروني */}
         <div className="field full">
 
