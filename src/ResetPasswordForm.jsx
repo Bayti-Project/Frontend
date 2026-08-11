@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import "./style.css"; // نفس ملف الـ CSS اللي عندك
 
 export default function ResetPasswordForm() {
@@ -130,13 +131,13 @@ export default function ResetPasswordForm() {
         {success
           ? "تم تعيين كلمة المرور بنجاح ✓"
           : submitting
-          ? "جارٍ الحفظ..."
-          : "اعادة تعيين كلمة السر"}
+            ? "جارٍ الحفظ..."
+            : "اعادة تعيين كلمة السر"}
       </button>
 
-      <a href="#" className="back-link">
+      <Link to="/login" className="back-link">
         العودة لتسجيل الدخول →
-      </a>
+      </Link>
     </form>
   );
 }
