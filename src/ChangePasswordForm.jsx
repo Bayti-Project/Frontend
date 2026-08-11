@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { FaRecycle } from "react-icons/fa";
 import "./style.css"; // نفس ملف الـ CSS المشترك
 
 export default function ChangePasswordForm() {
@@ -6,6 +7,9 @@ export default function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -56,7 +60,9 @@ export default function ChangePasswordForm() {
 
   return (
     <form className="card" onSubmit={handleSubmit} noValidate>
-      <div className="card-icon">🔄</div>
+      <div className="card-icon">
+        <FaRecycle />
+      </div>
 
       <h1 style={{ textAlign: "center" }}>تغيير كلمة المرور</h1>
       <p className="subtitle" style={{ textAlign: "center" }}>
@@ -69,12 +75,20 @@ export default function ChangePasswordForm() {
         <div className="input-wrap">
           <input
             id="currentPassword"
-            type="password"
+            type={showCurrent ? "text" : "password"}
             placeholder="أدخل كلمة المرور"
             autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
           />
+          <button
+            type="button"
+            className="toggle-eye"
+            aria-label={showCurrent ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+            onClick={() => setShowCurrent((prev) => !prev)}
+          >
+            👁
+          </button>
         </div>
       </div>
 
@@ -84,12 +98,20 @@ export default function ChangePasswordForm() {
         <div className="input-wrap">
           <input
             id="newPassword"
-            type="password"
+            type={showNew ? "text" : "password"}
             placeholder="أدخل كلمة المرور"
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
           />
+          <button
+            type="button"
+            className="toggle-eye"
+            aria-label={showNew ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+            onClick={() => setShowNew((prev) => !prev)}
+          >
+            👁
+          </button>
         </div>
 
         {/* شريط القوة فقط (بدون قائمة شروط تفصيلية) */}
@@ -106,13 +128,21 @@ export default function ChangePasswordForm() {
         <div className="input-wrap">
           <input
             id="confirmPassword"
-            type="password"
+            type={showConfirm ? "text" : "password"}
             placeholder="أدخل كلمة المرور"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className={showMatchMsg && !matches ? "invalid" : ""}
           />
+          <button
+            type="button"
+            className="toggle-eye"
+            aria-label={showConfirm ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+            onClick={() => setShowConfirm((prev) => !prev)}
+          >
+            👁
+          </button>
         </div>
         {showMatchMsg && (
           <div className={`match-msg show ${matches ? "ok" : "err"}`}>

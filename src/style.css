@@ -1,10 +1,10 @@
 :root {
-  --navy: #16243F;
+  --navy: #0b1e36;
   --navy-2: #1E3357;
   --blue-accent: #2F6FED;
   --blue-light: #CFE0FB;
-  --teal: #34C6C6;
-  --bg: #F3F4F6;
+  --teal: #0282AD;
+  --bg: #f8fafc;
   --card-bg: #FFFFFF;
   --text-dark: #16243F;
   --text-muted: #8891A3;
@@ -41,6 +41,8 @@ button {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
 }
 
 /* ---------- Header ---------- */
@@ -48,7 +50,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 40px;
+  padding: 12px 40px;
   background: #fff;
   border-bottom: 1px solid var(--border);
 }
@@ -62,19 +64,28 @@ button {
   color: var(--navy);
 }
 
+.logo .logo-img {
+  height: 48px;
+  width: auto;
+  display: block;
+}
+
+.logo .logo-img-footer {
+  height: 44px;
+}
+
 .logo .logo-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
 }
 
 .logo .logo-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 40px;
+  height: 40px;
 }
 
 .logo-text {
@@ -86,17 +97,18 @@ button {
 .logo-text small {
   font-size: 11px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: inherit;
+  opacity: 0.8;
 }
 
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 34px;
+  gap: 28px;
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 500;
   color: var(--text-dark);
 }
@@ -111,22 +123,6 @@ button {
   color: var(--blue-accent);
 }
 
-.main-nav a.active {
-  color: var(--blue-accent);
-  font-weight: 700;
-}
-
-.main-nav a.active::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  left: 0;
-  bottom: -2px;
-  height: 2px;
-  background: var(--blue-accent);
-  border-radius: 2px;
-}
-
 .header-actions {
   display: flex;
   align-items: center;
@@ -137,13 +133,113 @@ button {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  background: #fff;
+  border: none;
+  background: var(--navy);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  position: relative;
+  transition: background .2s ease, transform .15s ease;
+}
+
+.icon-btn:hover {
+  background: #06122b;
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.icon-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #E5484D;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #fff;
+}
+
+.notif-menu {
+  position: relative;
+}
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(22, 36, 63, 0.14);
+  width: 310px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notif-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--navy);
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #F1F3F7;
+  font-size: 13px;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+.notif-item:hover {
+  background: #F8FAFD;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item .notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0282AD;
+  flex: 0 0 auto;
+  margin-top: 5px;
+}
+
+.notif-item .notif-time {
+  color: var(--text-faint);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+.notif-empty {
+  padding: 24px 16px;
+  text-align: center;
   color: var(--text-muted);
+  font-size: 13.5px;
 }
 
 .avatar {
@@ -164,21 +260,89 @@ button {
   color: #7a88a3;
 }
 
+.avatar-menu {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(22, 36, 63, 0.14);
+  min-width: 190px;
+  padding: 6px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-menu button {
+  width: 100%;
+  text-align: right;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+
+.dropdown-menu button:hover {
+  background: #F3F6FC;
+  color: var(--navy);
+}
+
+/* ---------- Tabs ---------- */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px 0;
+}
+
+.tab {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .2s ease, color .2s ease;
+}
+
+.tab.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
 /* ---------- Main ---------- */
 .main {
   flex: 1;
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 56px 20px 70px;
+  padding: 24px 20px 28px;
 }
 
 .card {
   width: 100%;
-  max-width: 460px;
+  max-width: 440px;
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: 0 10px 40px rgba(22, 36, 63, 0.07);
-  padding: 34px 32px 30px;
+  padding: 26px 30px 24px;
   position: relative;
   overflow: hidden;
 }
@@ -190,25 +354,27 @@ button {
   right: 0;
   left: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--blue-accent), var(--teal));
+  background: linear-gradient(90deg, #0282AD, #34C6C6);
 }
 
 .card h1 {
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 800;
   margin: 6px 0 8px;
   color: var(--navy);
+  text-align: center;
 }
 
 .card .subtitle {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-muted);
-  margin: 0 0 26px;
+  margin: 0 0 18px;
   line-height: 1.6;
+  text-align: center;
 }
 
 .field {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .field label {
@@ -225,7 +391,7 @@ button {
 
 .input-wrap input {
   width: 100%;
-  padding: 13px 44px 13px 16px;
+  padding: 11px 44px 11px 16px;
   border-radius: 10px;
   border: 1.5px solid var(--border);
   background: #FAFBFC;
@@ -274,7 +440,7 @@ button {
 
 /* strength bar */
 .strength {
-  margin: 12px 0 4px;
+  margin: 8px 0 2px;
 }
 
 .strength-bar {
@@ -292,15 +458,15 @@ button {
 }
 
 .strength-bar span.filled-weak {
-  background: #E5484D;
+  background: #0282AD;
 }
 
 .strength-bar span.filled-mid {
-  background: #F5A623;
+  background: #0282AD;
 }
 
 .strength-bar span.filled-strong {
-  background: var(--blue-accent);
+  background: #0282AD;
 }
 
 .rules {
@@ -315,7 +481,7 @@ button {
 .rules li {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   font-size: 12.5px;
   color: var(--text-muted);
@@ -342,13 +508,13 @@ button {
 }
 
 .rules li.ok {
-  color: var(--text-dark);
-  font-weight: 500;
+  color: #4A9DF8;
+  font-weight: 600;
 }
 
 .rules li.ok .dot {
-  background: var(--blue-accent);
-  border-color: var(--blue-accent);
+  background: #4A9DF8;
+  border-color: #4A9DF8;
 }
 
 .rules li.ok .dot svg {
@@ -371,7 +537,7 @@ button {
 }
 
 .match-msg.ok {
-  color: #1E8E5A;
+  color: #4A9DF8;
 }
 
 .match-msg.err {
@@ -380,8 +546,8 @@ button {
 
 .submit-btn {
   width: 100%;
-  padding: 14px;
-  margin-top: 6px;
+  padding: 12px;
+  margin-top: 4px;
   border-radius: 10px;
   border: none;
   background: var(--navy);
@@ -393,7 +559,7 @@ button {
 }
 
 .submit-btn:hover {
-  background: #0F1B30;
+  background: #06122b;
 }
 
 .submit-btn:active {
@@ -410,8 +576,8 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 26px;
-  font-size: 14px;
+  margin-top: 18px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--navy);
 }
@@ -427,22 +593,27 @@ button {
 
 /* ---------- Change Password page additions ---------- */
 .card-icon {
-  width: 52px;
-  height: 52px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background: var(--blue-light);
   color: var(--blue-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  margin: 0 auto 16px;
+  font-size: 20px;
+  margin: 0 auto 12px;
+}
+
+.card-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
 .btn-row {
   display: flex;
   gap: 12px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .btn-row .submit-btn {
@@ -451,7 +622,7 @@ button {
 
 .cancel-btn {
   flex: 1;
-  padding: 14px;
+  padding: 12px;
   border-radius: 10px;
   border: 1.5px solid var(--border);
   background: #fff;
@@ -469,26 +640,27 @@ button {
 
 /* ---------- Footer ---------- */
 .site-footer {
-  background: var(--navy);
+  background: #0b1e36;
   color: #C7CEDC;
-  padding: 46px 40px 0;
+  padding: 28px 40px 0;
   margin-top: auto;
+  width: 100%;
 }
 
 .footer-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr) 1.3fr;
-  gap: 30px;
+  gap: 26px;
   max-width: 1180px;
   margin: 0 auto;
-  padding-bottom: 36px;
+  padding-bottom: 22px;
 }
 
 .footer-col h4 {
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
 }
 
 .footer-col ul {
@@ -497,11 +669,11 @@ button {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 8px;
 }
 
 .footer-col ul a {
-  font-size: 13.5px;
+  font-size: 13px;
   color: #AEB6C9;
   transition: color .2s ease;
 }
@@ -510,29 +682,63 @@ button {
   color: #fff;
 }
 
+.contact-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.contact-icon svg {
+  width: 13px;
+  height: 13px;
+  color: #9FE0F5;
+}
+
+.follow-label {
+  font-size: 12.5px;
+  color: #9FA8BC;
+  margin: 14px 0 8px;
+}
+
 .footer-brand {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .footer-brand .logo {
   color: #fff;
 }
 
+.footer-brand .logo-text small {
+  color: #fff;
+  opacity: 0.7;
+}
+
 .footer-brand p {
-  font-size: 13px;
-  line-height: 1.9;
+  font-size: 12.5px;
+  line-height: 1.8;
   color: #9FA8BC;
   margin: 0;
 }
 
 .social-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
-.social-row span {
+.social-row a {
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -542,9 +748,14 @@ button {
   justify-content: center;
   color: #fff;
   cursor: pointer;
+  transition: background .2s ease;
 }
 
-.social-row span svg {
+.social-row a:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.social-row a svg {
   width: 16px;
   height: 16px;
 }
@@ -552,8 +763,8 @@ button {
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   text-align: center;
-  padding: 18px 0;
-  font-size: 13px;
+  padding: 12px 0;
+  font-size: 12.5px;
   color: #8892A6;
 }
 
@@ -563,7 +774,7 @@ button {
   }
 
   .site-header {
-    padding: 16px 20px;
+    padding: 12px 20px;
   }
 
   .footer-grid {
@@ -572,8 +783,19 @@ button {
 }
 
 @media (max-width: 520px) {
+  .tabs {
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 20px 0;
+  }
+
+  .tab {
+    width: 100%;
+    max-width: 320px;
+  }
+
   .card {
-    padding: 26px 20px 24px;
+    padding: 22px 18px 20px;
   }
 
   .footer-grid {
@@ -581,6 +803,6 @@ button {
   }
 
   .site-footer {
-    padding: 36px 20px 0;
+    padding: 22px 20px 0;
   }
 }
