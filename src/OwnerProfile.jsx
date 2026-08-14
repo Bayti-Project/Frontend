@@ -1,25 +1,24 @@
-import { useState } from 'react';
 import './OwnerProfile.css';
-import {
-    FaBuilding, FaHome, FaKey, FaUsers, FaPlus, FaEdit,
-    FaCheckCircle, FaBell, FaUserCheck, FaCalendarAlt, FaEnvelope, FaPhoneAlt,
+import Navbar from './Navbar';
+import { FaBuilding, FaHome, FaKey, FaUsers, FaPlus, FaEdit,
+    FaCheckCircle, FaUserCheck, FaCalendarAlt, FaEnvelope, FaPhoneAlt,
     FaFacebookF, FaInstagram, FaLinkedinIn
 } from 'react-icons/fa';
 
-const OwnerProfile = ({ currentUser }) => {
-    const [userData] = useState({
+const OwnerProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEditProfileClick }) => {
+    const userData = {
         name: currentUser?.name || 'أحمد محمد',
         email: currentUser?.email || 'ahmed.mohamed@example.com',
         role: currentUser?.role || 'مالك',
         joinedYear: currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2023',
         avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'
-    });
+    };
 
     const stats = [
-        { id: 1, title: 'العقارات المنشورة', count: 20, icon: <FaBuilding />, color: '#0284c7', bg: '#e0f2fe' },
-        { id: 2, title: 'العقارات النشطة', count: 12, icon: <FaHome />, color: '#16a34a', bg: '#dcfce7' },
-        { id: 3, title: 'العقارات المؤجرة', count: 8, icon: <FaKey />, color: '#0284c7', bg: '#e0f2fe' },
-        { id: 4, title: 'طلبات الاهتمام', count: 24, icon: <FaUsers />, color: '#e11d48', bg: '#ffe4e6' },
+        { id: 1, title: 'العقارات المنشورة', count: 0, icon: <FaBuilding />, color: '#0284c7', bg: '#e0f2fe' },
+        { id: 2, title: 'العقارات النشطة', count: 0, icon: <FaHome />, color: '#16a34a', bg: '#dcfce7' },
+        { id: 3, title: 'العقارات المؤجرة', count: 0, icon: <FaKey />, color: '#0284c7', bg: '#e0f2fe' },
+        { id: 4, title: 'طلبات الاهتمام', count: 0, icon: <FaUsers />, color: '#e11d48', bg: '#ffe4e6' },
     ];
 
     const recentProperties = [
@@ -36,24 +35,11 @@ const OwnerProfile = ({ currentUser }) => {
 
     return (
         <div className="owner-profile-app" dir="rtl">
-            {/* Header */}
-            <header className="navbar">
-                <div className="nav-container">
-                    <div className="nav-logo">
-                        <span className="logo-text">بيتي <small>Bayti</small></span>
-                    </div>
-                    <nav className="nav-links">
-                        <a href="#home" className="active">الرئيسية</a>
-                        <a href="#properties">العقارات</a>
-                        <a href="#favorites">المفضلة</a>
-                        <a href="#support">الدعم</a>
-                    </nav>
-                    <div className="nav-actions">
-                        <button className="icon-btn"><FaBell /></button>
-                        <img src={userData.avatar} alt={userData.name} className="user-avatar-small" />
-                    </div>
-                </div>
-            </header>
+            {/* ناف بار موحد مع باقي صفحات الموقع */}
+            <Navbar
+                onProfileClick={onProfileClick}
+                onChangePasswordClick={onChangePasswordClick}
+            />
 
             {/* Main Area */}
             <main className="main-content">
@@ -83,7 +69,7 @@ const OwnerProfile = ({ currentUser }) => {
 
                     <div className="profile-actions-side">
                         <button className="btn-primary"><FaPlus /> إضافة عقار جديد</button>
-                        <button className="btn-secondary">تعديل الملف الشخصي</button>
+                        <button className="btn-secondary" onClick={onEditProfileClick}>تعديل الملف الشخصي</button>
                     </div>
                 </section>
 

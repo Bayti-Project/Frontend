@@ -333,6 +333,10 @@ button {
   overflow: hidden;
 }
 
+.edit-card {
+  max-width: 520px;
+}
+
 .card::before {
   content: "";
   position: absolute;
@@ -845,6 +849,31 @@ button {
   font-size: 14px !important;
 }
 
+.page .field .input-wrap textarea {
+  width: 100% !important;
+  padding: 11px 16px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid var(--border) !important;
+  background: #FAFBFC !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  color: var(--text-dark) !important;
+  text-align: right !important;
+  outline: none !important;
+  resize: vertical !important;
+}
+
+.page .field .input-wrap textarea::placeholder {
+  color: var(--text-faint) !important;
+  font-size: 14px !important;
+}
+
+.page .field .input-wrap textarea:focus {
+  border-color: var(--blue-accent) !important;
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12) !important;
+  background: #fff !important;
+}
+
 .page .field .input-wrap input:focus {
   border-color: var(--blue-accent) !important;
   box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12) !important;
@@ -853,4 +882,81 @@ button {
 
 .page .field .input-wrap input.invalid {
   border-color: #E5484D !important;
+}
+
+/* Success Modal Popup */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(11, 30, 54, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: modal-fade 0.2s ease;
+}
+
+.modal-box {
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(11, 30, 54, 0.25);
+  padding: 2rem 2.2rem;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  animation: modal-pop 0.25s ease;
+}
+
+.modal-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin: 0 auto 1rem;
+}
+
+.modal-box h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.modal-box p {
+  margin: 0 0 1.4rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.modal-btn {
+  background-color: var(--navy);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.5rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.modal-btn:hover {
+  background-color: #152a4a;
+}
+
+@keyframes modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
 }
