@@ -15,7 +15,7 @@ export default function Footer() {
         <div className="footer-brand">
           <a href="#" className="logo">
             <img
-              src="/logofooter.png"
+              src="/logo.png"
               alt="بيتي Bayti"
               className="logo-img logo-img-footer"
             />

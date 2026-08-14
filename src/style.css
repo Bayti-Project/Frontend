@@ -46,149 +46,151 @@ button {
 }
 
 /* ---------- Header ---------- */
+/* ضمان الترتيب الأفقي RTL في كل الهيدرات */
+/* ---------- Header ---------- */
+
+/* 1. الهيدر الرئيسي */
 .site-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 40px;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  direction: rtl !important;
+  width: 100% !important;
+  padding: 10px 24px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid var(--border) !important;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 20px;
-  color: var(--navy);
+/* 2. الشعار (أقصى اليمين) */
+.site-header>.logo {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  color: inherit !important;
 }
 
 .logo .logo-img {
-  height: 48px;
+  height: 40px;
   width: auto;
   display: block;
 }
 
-.logo .logo-img-footer {
-  height: 44px;
-}
-
-.logo .logo-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-}
-
-.logo .logo-icon svg {
-  width: 40px;
-  height: 40px;
-}
-
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-}
-
-.logo-text small {
-  font-size: 11px;
-  font-weight: 500;
-  color: inherit;
-  opacity: 0.8;
+/* 3. حاوية القائمة (بالمنتصف تماماً) */
+.site-header .nav-container {
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
 }
 
 .main-nav {
   display: flex;
-  align-items: center;
-  gap: 28px;
+  gap: 25px;
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 14.5px;
-  font-weight: 500;
-  color: var(--text-dark);
 }
 
-.main-nav a {
-  position: relative;
-  padding: 6px 0;
-  transition: color .2s ease;
+.main-nav {
+  display: flex !important;
+  gap: 24px !important;
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-.main-nav a:hover {
-  color: var(--blue-accent);
+.main-nav a:hover,
+.main-nav a.active {
+  color: var(--navy);
+  font-weight: 700;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+/* 4. الأيقونات (أقصى اليسار) */
+.site-header .header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  flex: none !important;
+  /* إلغاء flex: 1 عشان ما يدفع اللوجو */
 }
 
+/* أزرار الأيقونات شفافة وبسيطة مثل الصورة */
 .icon-btn {
   width: 38px;
   height: 38px;
   border-radius: 50%;
   border: none;
-  background: var(--navy);
-  color: #fff;
+  background: transparent;
+  color: #4A5568;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
-  transition: background .2s ease, transform .15s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .icon-btn:hover {
-  background: #06122b;
+  background: #f1f5f9;
+  color: var(--navy);
 }
 
-.icon-btn:active {
-  transform: scale(0.94);
-}
-
-.icon-btn svg {
-  width: 19px;
-  height: 19px;
-}
-
-.notif-badge {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  min-width: 17px;
-  height: 17px;
+.site-header .avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #E5484D;
-  color: #fff;
-  font-size: 10.5px;
-  font-weight: 700;
+  background: #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
-  border: 2px solid #fff;
+  border: 1.5px solid #cbd5e1;
+  cursor: pointer;
+  overflow: hidden;
+  min-width: 40px;
+  min-height: 40px;
+  aspect-ratio: auto;
+  flex-shrink: 0;
+  position: relative;
+  margin-bottom: 0;
+  font-size: inherit;
 }
 
-.notif-menu {
+.site-header .avatar svg {
+  width: 24px;
+  height: 24px;
+  color: #64748b;
+}
+
+/* القوائم المنسدلة */
+.notif-menu,
+.avatar-menu {
   position: relative;
 }
 
-.notif-panel {
+.notif-panel,
+.dropdown-menu {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
+  right: auto;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(22, 36, 63, 0.14);
-  width: 310px;
   z-index: 50;
+}
+
+.notif-panel {
+  width: 310px;
   overflow: hidden;
 }
 
@@ -209,15 +211,11 @@ button {
   font-size: 13px;
   color: var(--text-dark);
   cursor: pointer;
-  transition: background .15s ease;
+  transition: background 0.15s ease;
 }
 
 .notif-item:hover {
   background: #F8FAFD;
-}
-
-.notif-item:last-child {
-  border-bottom: none;
 }
 
 .notif-item .notif-dot {
@@ -242,39 +240,9 @@ button {
   font-size: 13.5px;
 }
 
-.avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #dfe6f3, #c7d3ea);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.avatar svg {
-  width: 22px;
-  height: 22px;
-  color: #7a88a3;
-}
-
-.avatar-menu {
-  position: relative;
-}
-
 .dropdown-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(22, 36, 63, 0.14);
   min-width: 190px;
   padding: 6px;
-  z-index: 50;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -292,12 +260,30 @@ button {
   font-weight: 500;
   color: var(--text-dark);
   cursor: pointer;
-  transition: background .15s ease, color .15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .dropdown-menu button:hover {
   background: #F3F6FC;
   color: var(--navy);
+}
+
+.notif-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #E5484D;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #fff;
 }
 
 /* ---------- Tabs ---------- */
@@ -805,4 +791,66 @@ button {
   .site-footer {
     padding: 22px 20px 0;
   }
+}
+
+/* ============================================================
+   حماية صفحات كلمة السر من تلوث register.css / Login.css
+   (هذه الملفات تُستورد عالمياً وقد تُلغي تنسيقاتنا)
+   ============================================================ */
+
+/* لوجو الفوتر: فك أي positioning دخيل */
+.footer-brand .logo {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  color: #fff !important;
+}
+
+/* حقول الفورم */
+.page .field {
+  display: block !important;
+  width: 100% !important;
+  margin-bottom: 14px !important;
+  gap: 0 !important;
+}
+
+.page .field label {
+  display: block !important;
+  margin-bottom: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--text-dark) !important;
+  text-align: right !important;
+}
+
+.page .field .input-wrap input {
+  width: 100% !important;
+  height: auto !important;
+  padding: 11px 44px 11px 16px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid var(--border) !important;
+  background: #FAFBFC !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  color: var(--text-dark) !important;
+  text-align: right !important;
+  outline: none !important;
+}
+
+.page .field .input-wrap input::placeholder {
+  color: var(--text-faint) !important;
+  font-size: 14px !important;
+}
+
+.page .field .input-wrap input:focus {
+  border-color: var(--blue-accent) !important;
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12) !important;
+  background: #fff !important;
+}
+
+.page .field .input-wrap input.invalid {
+  border-color: #E5484D !important;
 }

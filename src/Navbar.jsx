@@ -6,20 +6,23 @@ export default function Navbar({ onProfileClick, onChangePasswordClick }) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <header className="site-header">
+    <header className="site-header" dir="rtl">
+      {/* 1. الشعار يميناً */}
       <a href="#" className="logo">
         <img src="/logo.png" alt="بيتي Bayti" className="logo-img" />
       </a>
 
-      <nav>
+      {/* 2. الروابط في المنتصف */}
+      <nav className="nav-container">
         <ul className="main-nav">
-          <li><a href="#">الرئيسية</a></li>
-          <li><a href="#">الوحدات</a></li>
-          <li><a href="#">الخدمات</a></li>
-          <li><a href="#">تواصل معنا</a></li>
+          <li><a href="#" className="active">الرئيسية</a></li>
+          <li><a href="#">العقارات</a></li>
+          <li><a href="#">المفضلة</a></li>
+          <li><a href="#">الدعم</a></li>
         </ul>
       </nav>
 
+      {/* 3. الأيقونات يساراً */}
       <div className="header-actions">
         <div className="notif-menu">
           <button
@@ -39,13 +42,6 @@ export default function Navbar({ onProfileClick, onChangePasswordClick }) {
                 <div>
                   <div>عرض جديد على وحدتك</div>
                   <div className="notif-time">قبل 5 دقائق</div>
-                </div>
-              </div>
-              <div className="notif-item">
-                <span className="notif-dot"></span>
-                <div>
-                  <div>تم قبول طلبك بنجاح</div>
-                  <div className="notif-time">قبل ساعة</div>
                 </div>
               </div>
               <div className="notif-empty">لا توجد إشعارات أخرى</div>
