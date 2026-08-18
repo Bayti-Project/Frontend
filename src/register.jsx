@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./register.css";
 import building from "./assets/building.png";
 
@@ -9,6 +11,64 @@ import {
 } from "react-icons/fa";
 
 function Register() {
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("مالك عقار");
+  const [accountType, setAccountType] = useState("فرد");
+  const [agree, setAgree] = useState(false);
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  function clearFieldError(fieldName) {
+    if (fieldErrors[fieldName]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[fieldName];
+        return next;
+      });
+    }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    const errors = {};
+    if (!name.trim()) errors.name = "يرجى تعبئة الحقل";
+    if (!phone.trim()) errors.phone = "يرجى تعبئة الحقل";
+    if (!email.trim()) errors.email = "يرجى تعبئة الحقل";
+    if (!password.trim()) errors.password = "يرجى تعبئة الحقل";
+
+    if (!agree) {
+      setError("يجب الموافقة على شروط الخدمة وسياسة الخصوصية.");
+      return;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError("");
+      return;
+    }
+
+    setError("");
+    setFieldErrors({});
+
+    const user = {
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      password,
+      role,
+      accountType,
+    };
+
+    localStorage.setItem("bayti_user", JSON.stringify(user));
+    navigate("/home");
+  }
+
   return (
     <div className="register">
 
@@ -41,7 +101,7 @@ function Register() {
 
 
       {/* الفورم */}
-      <div className="form-section">
+      <form className="form-section" onSubmit={handleSubmit} noValidate>
 
         <h2>
           إنشاء حساب جديد
@@ -71,24 +131,40 @@ function Register() {
 
           <div className="field">
 
-            <label>
+            <label htmlFor="regName">
               الاسم
             </label>
 
             <input
+              id="regName"
               type="text"
               placeholder="أدخل اسمك"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                clearFieldError("name");
+              }}
+              className={fieldErrors.name ? "field-error-input" : ""}
             />
+            {fieldErrors.name && <span className="field-error-msg">{fieldErrors.name}</span>}
 
           </div>
           <div className="field">
-            <label>رقم الهاتف</label>
+            <label htmlFor="regPhone">رقم الهاتف</label>
 
             <input
+              id="regPhone"
               type="tel"
               placeholder="059 000 0000"
               dir="ltr"
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                clearFieldError("phone");
+              }}
+              className={fieldErrors.phone ? "field-error-input" : ""}
             />
+            {fieldErrors.phone && <span className="field-error-msg">{fieldErrors.phone}</span>}
           </div>
 
         </div>
@@ -96,14 +172,22 @@ function Register() {
         {/* البريد الإلكتروني */}
         <div className="field full">
 
-          <label>
+          <label htmlFor="regEmail">
             البريد الإلكتروني
           </label>
 
           <input
+            id="regEmail"
             type="email"
             placeholder="أدخل البريد الإلكتروني"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearFieldError("email");
+            }}
+            className={fieldErrors.email ? "field-error-input" : ""}
           />
+          {fieldErrors.email && <span className="field-error-msg">{fieldErrors.email}</span>}
 
         </div>
 
@@ -111,14 +195,22 @@ function Register() {
         {/* كلمة المرور */}
         <div className="field full">
 
-          <label>
+          <label htmlFor="regPassword">
             كلمة المرور
           </label>
 
           <input
+            id="regPassword"
             type="password"
             placeholder="أدخل كلمة المرور"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError("password");
+            }}
+            className={fieldErrors.password ? "field-error-input" : ""}
           />
+          {fieldErrors.password && <span className="field-error-msg">{fieldErrors.password}</span>}
 
         </div>
 
@@ -130,9 +222,14 @@ function Register() {
             صفة المستخدم
           </label>
 
-          <div className="buttons">
+          <div className="buttons" role="group" aria-label="صفة المستخدم">
 
-            <button className="option active">
+            <button
+              type="button"
+              className={role === "مالك عقار" ? "option active" : "option"}
+              aria-pressed={role === "مالك عقار"}
+              onClick={() => setRole("مالك عقار")}
+            >
 
               <FaBuilding />
 
@@ -141,7 +238,12 @@ function Register() {
             </button>
 
 
-            <button className="option">
+            <button
+              type="button"
+              className={role === "مستأجر" ? "option active" : "option"}
+              aria-pressed={role === "مستأجر"}
+              onClick={() => setRole("مستأجر")}
+            >
 
               <FaUserTie />
 
@@ -161,14 +263,24 @@ function Register() {
             نوع الحساب
           </label>
 
-          <div className="buttons">
+          <div className="buttons" role="group" aria-label="نوع الحساب">
 
-            <button className="option active">
+            <button
+              type="button"
+              className={accountType === "فرد" ? "option active" : "option"}
+              aria-pressed={accountType === "فرد"}
+              onClick={() => setAccountType("فرد")}
+            >
               فرد
             </button>
 
 
-            <button className="option">
+            <button
+              type="button"
+              className={accountType === "مكتب عقاري" ? "option active" : "option"}
+              aria-pressed={accountType === "مكتب عقاري"}
+              onClick={() => setAccountType("مكتب عقاري")}
+            >
               مكتب عقاري
             </button>
 
@@ -180,7 +292,14 @@ function Register() {
         {/* الموافقة */}
         <div className="agree">
 
-          <input type="checkbox" />
+          <input
+            type="checkbox"
+            checked={agree}
+            onChange={(e) => {
+              setAgree(e.target.checked);
+              setError("");
+            }}
+          />
 
           <span>
             أوافق على&nbsp;<a href="#">شروط الخدمة</a>&nbsp;و&nbsp;<a href="#">سياسة الخصوصية</a>&nbsp;الخاصة بمنصة بيتي.
@@ -188,9 +307,11 @@ function Register() {
 
         </div>
 
+        {error && <p className="reg-error" role="alert">{error}</p>}
+
 
         {/* زر إنشاء الحساب */}
-        <button className="register-btn">
+        <button type="submit" className="register-btn">
 
           إنشاء حساب
 
@@ -210,7 +331,7 @@ function Register() {
 
         </p>
 
-      </div>
+      </form>
 
     </div>
   );

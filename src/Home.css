@@ -1,0 +1,437 @@
+/* ===== صفحة الرئيسية ===== */
+
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+/* Hero */
+.home-hero {
+  min-height: 460px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.hero-content {
+  max-width: 700px;
+}
+
+.hero-content h1 {
+  color: #ffffff;
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0 0 1rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.hero-content p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.05rem;
+  margin: 0 0 2rem;
+  line-height: 1.7;
+}
+
+.hero-search {
+  display: flex;
+  gap: 0.6rem;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.6rem;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  right: 14px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.search-input-wrap input {
+  width: 100%;
+  padding: 0.7rem 2.4rem 0.7rem 1rem;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #0f172a;
+  border-radius: 8px;
+}
+
+.search-input-wrap input::placeholder {
+  color: #94a3b8;
+}
+
+.search-btn {
+  background: #0b1e36;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.8rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.search-btn:hover {
+  background: #152a4a;
+}
+
+/* إحصائيات */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: #ffffff;
+  border-bottom: 1px solid #eef2f7;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 2rem 1.5rem;
+  gap: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item strong {
+  display: block;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0b1e36;
+}
+
+.stat-item span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* الأقسام */
+.home-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 3rem 1.5rem 1rem;
+  box-sizing: border-box;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.section-head.center {
+  flex-direction: column;
+  text-align: center;
+}
+
+.section-head h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0b1e36;
+  margin: 0;
+}
+
+.section-head p {
+  color: #64748b;
+  margin: 0.4rem 0 0;
+}
+
+.section-link {
+  color: #0284c7;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* بطاقات العقارات */
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.property-card {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #eef2f7;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.property-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+.property-img-wrap {
+  position: relative;
+  height: 190px;
+}
+
+.property-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.property-type {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.property-type.sale {
+  background: #0b1e36;
+}
+
+.property-type.rent {
+  background: #0284c7;
+}
+
+.property-body {
+  padding: 1rem 1.1rem 1.2rem;
+}
+
+.property-body h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.property-location {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #64748b;
+  font-size: 0.85rem;
+  margin: 0 0 0.7rem;
+}
+
+.property-features {
+  display: flex;
+  gap: 1rem;
+  color: #475569;
+  font-size: 0.82rem;
+  margin-bottom: 0.8rem;
+}
+
+.property-features span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.property-price {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #0b1e36;
+}
+
+/* لماذا بيتي */
+.why-section {
+  background: #f8fafc;
+  margin: 2rem auto 0;
+  padding: 3rem 1.5rem;
+  box-sizing: border-box;
+  border-radius: 0;
+}
+
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.why-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.8rem 1.4rem;
+  text-align: center;
+  border: 1px solid #eef2f7;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+}
+
+.why-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  margin: 0 auto 1rem;
+}
+
+.why-card h3 {
+  font-size: 1rem;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.why-card p {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* الخطوات */
+.steps-section {
+  padding-bottom: 3rem;
+}
+
+.steps-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.step-card {
+  position: relative;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.step-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #0b1e36;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto 1rem;
+}
+
+.step-num {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0284c7;
+  color: #ffffff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.step-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+/* دعوة لاتخاذ إجراء */
+.home-cta {
+  text-align: center;
+  background: #0b1e36;
+  color: #ffffff;
+  padding: 3rem 1.5rem;
+  margin: 0 auto 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.home-cta h2 {
+  font-size: 1.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.home-cta p {
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  color: #0b1e36;
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem 2rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.cta-btn:hover {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+/* شاشات أصغر */
+@media (max-width: 900px) {
+  .properties-grid,
+  .why-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .properties-grid,
+  .why-grid,
+  .steps-row,
+  .home-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-content h1 {
+    font-size: 1.6rem;
+  }
+
+  .hero-search {
+    flex-direction: column;
+  }
+
+  .search-btn {
+    width: 100%;
+  }
+}

@@ -1,21 +1,39 @@
 import { useState } from "react";
 import { FaBell, FaUserCircle, FaUser, FaKey } from "react-icons/fa";
 
-export default function Navbar({ onProfileClick, onChangePasswordClick }) {
+export default function Navbar({ onProfileClick, onChangePasswordClick, onHomeClick }) {
   const [showNotif, setShowNotif] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <header className="site-header" dir="rtl">
       {/* 1. الشعار يميناً */}
-      <a href="#" className="logo">
+      <a
+        href="#"
+        className="logo"
+        onClick={(e) => {
+          e.preventDefault();
+          onHomeClick?.();
+        }}
+      >
         <img src="/logo.png" alt="بيتي Bayti" className="logo-img" />
       </a>
 
       {/* 2. الروابط في المنتصف */}
       <nav className="nav-container">
         <ul className="main-nav">
-          <li><a href="#" className="active">الرئيسية</a></li>
+          <li>
+            <a
+              href="#"
+              className="active"
+              onClick={(e) => {
+                e.preventDefault();
+                onHomeClick?.();
+              }}
+            >
+              الرئيسية
+            </a>
+          </li>
           <li><a href="#">العقارات</a></li>
           <li><a href="#">المفضلة</a></li>
           <li><a href="#">الدعم</a></li>

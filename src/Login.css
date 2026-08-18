@@ -189,6 +189,27 @@ body,
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: #123557;
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+  text-align: right;
 }
 
 .divider {

@@ -5,18 +5,56 @@ import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 import heroImg from './assets/hero.png';
 
+const API_BASE = 'http://127.0.0.1:8000';
+
+function extractErrorMessage(data) {
+    if (!data) return 'بيانات الدخول غير صحيحة';
+    if (typeof data.detail === 'string' && data.detail) return data.detail;
+    if (Array.isArray(data.non_field_errors)) return data.non_field_errors[0];
+    if (Array.isArray(data.email)) return data.email[0];
+    if (Array.isArray(data.password)) return data.password[0];
+    return 'بيانات الدخول غير صحيحة';
+}
+
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // عند الضغط على تسجيل الدخول ينقل المستخدم للصفحة الرئيسية
-        navigate('/home');
+        setError('');
+        setLoading(true);
+
+        try {
+            const res = await fetch(`${API_BASE}/api/auth/login/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                setError(extractErrorMessage(data));
+                setLoading(false);
+                return;
+            }
+
+            localStorage.setItem('access_token', data.access);
+            localStorage.setItem('refresh_token', data.refresh);
+
+            navigate('/home');
+        } catch {
+            setError('تعذر الاتصال بالخادم، تأكد من تشغيل الخادم وحاول مرة أخرى.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -46,6 +84,8 @@ function Login() {
                     </div>
 
                     <form onSubmit={handleSubmit}>
+                        {error && <div className="form-error" role="alert">{error}</div>}
+
                         <div className="input-group">
                             <label>البريد الإلكتروني</label>
                             <div className="input-wrapper">
@@ -93,8 +133,8 @@ function Login() {
                             </Link>
                         </div>
 
-                        <button type="submit" className="btn-submit">
-                            تسجيل الدخول
+                        <button type="submit" className="btn-submit" disabled={loading}>
+                            {loading ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'}
                         </button>
                     </form>
 

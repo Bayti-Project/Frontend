@@ -1,0 +1,91 @@
+/* ===== صفحة الملف الشخصي للمستأجر - إضافات خاصة ===== */
+
+/* عكس جهة البطاقة: المعلومات يساراً والأزرار يميناً (RTL) */
+.tenant-header-card {
+    flex-direction: row;
+}
+
+/* الحل الأبسط والأنظف باعتلاء خاصية order */
+.tenant-header-card .profile-info-side {
+    order: 1;
+    /* يظهر أولاً على اليمين */
+}
+
+.tenant-header-card .profile-actions-side {
+    order: 2;
+    /* يظهر ثانياً على اليسار */
+}
+
+/* زر الحفظ أقصى يسار البطاقة */
+.bookmark-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.3rem;
+    margin-inline-start: auto;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.bookmark-btn:hover {
+    color: #0b1e36;
+}
+
+/* صورة العقار داخل الطلبات */
+.req-img {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* شارات حالة الطلب */
+.status-badge {
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.status-badge.accepted {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.status-badge.rejected {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* شاشات أصغر: عكس الترتيب يصبح فوق بعض */
+@media (max-width: 640px) {
+    .tenant-header-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .tenant-header-card .profile-info-side,
+    .tenant-header-card .profile-actions-side {
+        order: 0;
+    }
+
+    .tenant-header-card .profile-actions-side {
+        flex-direction: row;
+    }
+
+    .tenant-header-card .profile-actions-side .btn-primary,
+    .tenant-header-card .profile-actions-side .btn-secondary {
+        flex: 1;
+    }
+}

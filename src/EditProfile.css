@@ -1,0 +1,278 @@
+/* ===== صفحة تعديل الملف الشخصي ===== */
+
+.edit-profile-page {
+  background: #f8fafc;
+}
+
+.edit-profile-main {
+  flex: 1;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  box-sizing: border-box;
+}
+
+/* العنوان */
+.edit-profile-header {
+  text-align: right;
+}
+
+.edit-profile-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0b1e36;
+  margin: 0 0 0.35rem;
+}
+
+.edit-profile-header p {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* البطاقة الرئيسية */
+.edit-profile-card {
+  margin-top: 1.5rem;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  padding: 1.8rem 2rem;
+  direction: rtl;
+}
+
+/* قسم صورة الملف الشخصي */
+.edit-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.edit-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+  background: #f1f5f9;
+  flex-shrink: 0;
+}
+
+.edit-avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  color: #0b1e36;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.upload-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.upload-hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+/* الخط الفاصل */
+.edit-divider {
+  height: 1px;
+  background: #eef2f7;
+  margin: 1.5rem 0;
+}
+
+/* شبكة الحقول */
+.edit-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem 1.5rem;
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: stretch;
+}
+
+.edit-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.edit-field input,
+.edit-field select,
+.edit-field textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #0f172a;
+  text-align: right;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.edit-field input::placeholder,
+.edit-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+.edit-field input:focus,
+.edit-field select:focus,
+.edit-field textarea:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+  background: #ffffff;
+}
+
+.edit-field input.invalid {
+  border-color: #e5484d;
+}
+
+.edit-field textarea {
+  resize: vertical;
+  min-height: 44px;
+}
+
+/* الصف ثلاثي الأعمدة: الواتس | المقدمة | الهاتف */
+.edit-form-grid.three-cols {
+  margin-top: 1.2rem;
+  grid-template-columns: 1.1fr 1.4fr 1.1fr;
+}
+
+.three-cols .phone-input select {
+  width: 96px;
+  padding: 0.7rem 0.5rem;
+}
+
+.three-cols .phone-input input {
+  min-width: 0;
+}
+
+/* حقل الواتس مع رمز الدولة */
+.phone-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.phone-input select {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.phone-input input {
+  flex: 1;
+}
+
+/* أزرار الإجراءات */
+.edit-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.8rem;
+  margin-top: 1.8rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eef2f7;
+}
+
+.save-btn {
+  background: #0b1e36;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.8rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #152a4a;
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.outline-btn {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.7rem 1.8rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.outline-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* شاشات أصغر */
+@media (max-width: 900px) {
+  .edit-form-grid.three-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .three-cols .edit-field:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .edit-profile-main {
+    padding: 1.5rem 1rem;
+  }
+
+  .edit-profile-card {
+    padding: 1.4rem 1.2rem;
+  }
+
+  .edit-form-grid,
+  .edit-form-grid.three-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .three-cols .edit-field:nth-child(2) {
+    grid-column: auto;
+  }
+
+  .edit-avatar-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
