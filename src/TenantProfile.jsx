@@ -14,7 +14,7 @@ const STATUS_MAP = {
     rejected: 'مرفوض',
 };
 
-const TenantProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEditProfileClick }) => {
+const TenantProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
     const [userData] = useState({
         name: currentUser?.name || 'أحمد محمد',
         email: currentUser?.email || 'ahmed.mohamed@example.com',
@@ -47,6 +47,7 @@ const TenantProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onE
             <Navbar
                 onProfileClick={onProfileClick}
                 onChangePasswordClick={onChangePasswordClick}
+                onLogoutClick={onLogoutClick}
             />
 
             <main className="main-content">

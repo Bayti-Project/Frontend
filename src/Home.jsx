@@ -134,12 +134,13 @@ const steps = [
   },
 ];
 
-export default function Home({ onProfileClick, onChangePasswordClick }) {
+export default function Home({ onProfileClick, onChangePasswordClick, onLogoutClick }) {
   return (
     <div className="home-page" dir="rtl">
       <Navbar
         onProfileClick={onProfileClick}
         onChangePasswordClick={onChangePasswordClick}
+        onLogoutClick={onLogoutClick}
       />
 
       {/* Hero */}

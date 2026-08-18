@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import "./style.css"; // نفس ملف الـ CSS اللي عندك
+import "./style.css";
 
 export default function ResetPasswordForm() {
   // ---------- الحالة (State) ----------

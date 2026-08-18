@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { FaBell, FaUserCircle, FaUser, FaKey } from "react-icons/fa";
+import { FaBell, FaUserCircle, FaUser, FaKey, FaSignOutAlt } from "react-icons/fa";
 
-export default function Navbar({ onProfileClick, onChangePasswordClick, onHomeClick }) {
+export default function Navbar({ onProfileClick, onChangePasswordClick, onLogoutClick, onHomeClick }) {
   const [showNotif, setShowNotif] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -83,6 +83,9 @@ export default function Navbar({ onProfileClick, onChangePasswordClick, onHomeCl
               </button>
               <button onClick={onChangePasswordClick}>
                 <FaKey /> تغيير كلمة المرور
+              </button>
+              <button className="logout-btn" onClick={onLogoutClick}>
+                <FaSignOutAlt /> تسجيل الخروج
               </button>
             </div>
           )}

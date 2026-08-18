@@ -5,7 +5,7 @@ import { FaBuilding, FaHome, FaKey, FaUsers, FaPlus, FaEdit,
     FaFacebookF, FaInstagram, FaLinkedinIn
 } from 'react-icons/fa';
 
-const OwnerProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEditProfileClick }) => {
+const OwnerProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
     const userData = {
         name: currentUser?.name || 'أحمد محمد',
         email: currentUser?.email || 'ahmed.mohamed@example.com',
@@ -39,6 +39,7 @@ const OwnerProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEd
             <Navbar
                 onProfileClick={onProfileClick}
                 onChangePasswordClick={onChangePasswordClick}
+                onLogoutClick={onLogoutClick}
             />
 
             {/* Main Area */}

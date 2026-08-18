@@ -15,7 +15,6 @@ import "./style.css";
 
 export default function App() {
   const navigate = useNavigate();
-  const [page, setPage] = useState("reset");
   const [view, setView] = useState("password");
   const [user, setUser] = useState(() => {
     let saved;
@@ -50,9 +49,25 @@ export default function App() {
       setView("profile");
     },
     onChangePasswordClick: () => {
-      setPage("change");
+      navigate("/change-password");
+    },
+    onLogoutClick: () => {
       setView("password");
-      navigate("/");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("bayti_user");
+      setUser({
+        name: "أحمد محمد",
+        email: "ahmed.mohamed@example.com",
+        role: "مالك",
+        accountType: "فرد",
+        phone: "0598 123 456",
+        createdAt: "2023-01-01",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+        city: "غزة - الرمال",
+        bio: "صاحب عقارات في قطاع غزة",
+      });
+      navigate("/login");
     },
   };
 
@@ -91,30 +106,26 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/home" element={<Home {...navProps} />} />
       <Route
+        path="/change-password"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <ChangePasswordForm />
+            </main>
+            <Footer />
+          </div>
+        }
+      />
+      <Route path="/reset-password" element={<ResetPasswordForm />} />
+      <Route
         path="*"
         element={
           <div className="page">
             <Navbar {...navProps} />
-
-            <div className="tabs" role="tablist">
-              <button
-                className={page === "reset" ? "tab active" : "tab"}
-                onClick={() => setPage("reset")}
-              >
-                إعادة تعيين كلمة المرور
-              </button>
-              <button
-                className={page === "change" ? "tab active" : "tab"}
-                onClick={() => setPage("change")}
-              >
-                تغيير كلمة المرور
-              </button>
-            </div>
-
             <main className="main">
-              {page === "reset" ? <ResetPasswordForm /> : <ChangePasswordForm />}
+              <ResetPasswordForm />
             </main>
-
             <Footer />
           </div>
         }
