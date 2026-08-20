@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./register.css";
-import building from "./assets/building.png";
+import building from "./assets/building.jpg";
 
 import {
   FaCamera,

@@ -3,7 +3,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaApple, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
-import heroImg from './assets/hero.png';
+import heroImg from './assets/hero.jpg';
 
 const API_BASE = 'http://127.0.0.1:8000';
 

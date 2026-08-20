@@ -15,7 +15,7 @@ import {
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import "./Home.css";
-import heroImg from "./assets/hero.png";
+import heroImg from "./assets/hero.jpg";
 
 const featuredProperties = [
   {
