@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./register.css";
 import building from "./assets/building.png";
@@ -9,6 +9,8 @@ import {
   FaBuilding,
   FaArrowLeft,
 } from "react-icons/fa";
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
 
 function Register() {
   const navigate = useNavigate();
@@ -22,6 +24,9 @@ function Register() {
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [avatar, setAvatar] = useState("");
+
+  const fileInputRef = useRef(null);
 
   function clearFieldError(fieldName) {
     if (fieldErrors[fieldName]) {
@@ -31,6 +36,29 @@ function Register() {
         return next;
       });
     }
+  }
+
+  function handleAvatarSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setFieldErrors((prev) => ({ ...prev, avatar: "حجم الصورة يتجاوز 2MB" }));
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatar(reader.result);
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next.avatar;
+        return next;
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   }
 
   function handleSubmit(e) {
@@ -63,6 +91,7 @@ function Register() {
       password,
       role,
       accountType,
+      avatar,
     };
 
     localStorage.setItem("bayti_user", JSON.stringify(user));
@@ -113,17 +142,29 @@ function Register() {
 
 
         {/* صورة المستخدم */}
-        <div className="avatar">
-
-          <FaCamera />
+        <button
+          type="button"
+          className="avatar avatar-upload"
+          onClick={() => fileInputRef.current?.click()}
+          style={avatar ? { backgroundImage: `url(${avatar})` } : undefined}
+        >
+          {!avatar && <FaCamera />}
 
           <span className="edit-dot"></span>
+        </button>
 
-        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif"
+          hidden
+          onChange={handleAvatarSelect}
+        />
 
         <p className="upload-text">
-          صورة الملف الشخصي
+          {avatar ? "انقر لتغيير الصورة" : "صورة الملف الشخصي"}
         </p>
+        {fieldErrors.avatar && <p className="reg-error" role="alert">{fieldErrors.avatar}</p>}
 
 
         {/* الاسم ورقم الهاتف */}

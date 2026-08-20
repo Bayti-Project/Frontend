@@ -8,7 +8,7 @@ import "./EditProfile.css";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
 
-export default function EditProfile({ currentUser, onSave, onCancel, onProfileClick, onChangePasswordClick, onLogoutClick }) {
+export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick, onProfileClick, onChangePasswordClick, onLogoutClick }) {
   const [name, setName] = useState(currentUser?.name || "");
   const [email, setEmail] = useState(currentUser?.email || "");
   const [phone, setPhone] = useState(currentUser?.phone || "");
@@ -72,6 +72,7 @@ export default function EditProfile({ currentUser, onSave, onCancel, onProfileCl
   return (
     <div className="page edit-profile-page" dir="rtl">
       <Navbar
+        onHomeClick={onHomeClick}
         onProfileClick={onProfileClick}
         onChangePasswordClick={onChangePasswordClick}
         onLogoutClick={onLogoutClick}

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   FaPhone,
   FaEnvelope,
@@ -13,13 +14,13 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="footer-grid">
         <div className="footer-brand">
-          <a href="#" className="logo">
+          <Link to="/home" className="logo">
             <img
               src="/logo.png"
               alt="بيتي Bayti"
               className="logo-img logo-img-footer"
             />
-          </a>
+          </Link>
           <p>
             منصة بيتي العقارية الرائدة في قطاع غزة، نربط الملاك
             والمستأجرين بأفضل العقارات في المنطقة.
@@ -35,7 +36,7 @@ export default function Footer() {
         <div className="footer-col">
           <h4>روابط سريعة</h4>
           <ul>
-            <li><a href="#">الرئيسية</a></li>
+            <li><Link to="/home">الرئيسية</Link></li>
             <li><a href="#">عقارات للبيع</a></li>
             <li><a href="#">عقارات للإيجار</a></li>
             <li><a href="#">حسابي</a></li>

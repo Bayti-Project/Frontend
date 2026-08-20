@@ -201,6 +201,24 @@ body,
   margin-bottom: 3px;
 }
 
+/* صورة قابلة للرفع */
+.avatar-upload {
+  cursor: pointer;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avatar-upload:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 14px rgba(2, 130, 173, 0.25);
+}
+
+.avatar-upload svg {
+  pointer-events: none;
+}
+
 .edit-dot {
   position: absolute;
 

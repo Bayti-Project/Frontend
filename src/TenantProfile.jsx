@@ -14,7 +14,7 @@ const STATUS_MAP = {
     rejected: 'مرفوض',
 };
 
-const TenantProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
+const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
     const [userData] = useState({
         name: currentUser?.name || 'أحمد محمد',
         email: currentUser?.email || 'ahmed.mohamed@example.com',
@@ -45,6 +45,7 @@ const TenantProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onE
     return (
         <div className="owner-profile-app tenant-profile-app" dir="rtl">
             <Navbar
+                onHomeClick={onHomeClick}
                 onProfileClick={onProfileClick}
                 onChangePasswordClick={onChangePasswordClick}
                 onLogoutClick={onLogoutClick}

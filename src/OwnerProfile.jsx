@@ -1,11 +1,12 @@
 import './OwnerProfile.css';
 import Navbar from './Navbar';
+import { Link } from 'react-router-dom';
 import { FaBuilding, FaHome, FaKey, FaUsers, FaPlus, FaEdit,
     FaCheckCircle, FaUserCheck, FaCalendarAlt, FaEnvelope, FaPhoneAlt,
     FaFacebookF, FaInstagram, FaLinkedinIn
 } from 'react-icons/fa';
 
-const OwnerProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
+const OwnerProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
     const userData = {
         name: currentUser?.name || 'أحمد محمد',
         email: currentUser?.email || 'ahmed.mohamed@example.com',
@@ -37,6 +38,7 @@ const OwnerProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEd
         <div className="owner-profile-app" dir="rtl">
             {/* ناف بار موحد مع باقي صفحات الموقع */}
             <Navbar
+                onHomeClick={onHomeClick}
                 onProfileClick={onProfileClick}
                 onChangePasswordClick={onChangePasswordClick}
                 onLogoutClick={onLogoutClick}
@@ -153,7 +155,7 @@ const OwnerProfile = ({ currentUser, onProfileClick, onChangePasswordClick, onEd
                     <div className="footer-col">
                         <h4>روابط سريعة</h4>
                         <ul>
-                            <li><a href="#home">الرئيسية</a></li>
+                            <li><Link to="/home">الرئيسية</Link></li>
                             <li><a href="#properties">العقارات</a></li>
                             <li><a href="#about">من نحن</a></li>
                             <li><a href="#how">كيف تعمل المنصة</a></li>

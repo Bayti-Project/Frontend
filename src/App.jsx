@@ -49,6 +49,7 @@ export default function App() {
       setView("profile");
     },
     onChangePasswordClick: () => {
+      setView("password");
       navigate("/change-password");
     },
     onLogoutClick: () => {
@@ -113,7 +114,6 @@ export default function App() {
             <main className="main">
               <ChangePasswordForm />
             </main>
-            <Footer />
           </div>
         }
       />
