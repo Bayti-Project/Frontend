@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "./register.css";
 import building from "./assets/building.png";
 
@@ -366,9 +366,9 @@ function Register() {
 
           لديك حساب بالفعل؟
 
-          <a href="/login">
+          <Link to="/login">
             تسجيل الدخول
-          </a>
+          </Link>
 
         </p>
 
