@@ -11,6 +11,7 @@ import Register from "./register";
 import ForgotPassword from "./ForgotPassword";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { resolveMediaUrl } from "./api.js";
 import "./style.css";
 
 export default function App() {
@@ -30,7 +31,7 @@ export default function App() {
       accountType: saved?.accountType || "فرد",
       phone: saved?.phone || "0598 123 456",
       createdAt: "2023-01-01",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+      avatar: resolveMediaUrl(saved?.avatar) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
       city: "غزة - الرمال",
       bio: "صاحب عقارات في قطاع غزة",
     };
@@ -45,7 +46,9 @@ export default function App() {
       try {
         const saved = JSON.parse(localStorage.getItem("bayti_user") || "null");
         if (saved) setUser((prev) => ({ ...prev, ...saved }));
-      } catch {}
+      } catch {
+        /* تجاهل بيانات localStorage غير الصالحة */
+      }
       setView("profile");
     },
     onChangePasswordClick: () => {
@@ -63,7 +66,7 @@ export default function App() {
         role: "مالك",
         accountType: "فرد",
         phone: "0598 123 456",
-        createdAt: "2023-01-01",
+createdAt: "2023-01-01",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
         city: "غزة - الرمال",
         bio: "صاحب عقارات في قطاع غزة",
@@ -90,10 +93,18 @@ export default function App() {
     return (
       <EditProfile
         currentUser={user}
-        onSave={(updated) => {
-          setUser({ ...user, ...updated });
-          setView("profile");
-        }}
+onSave={(updated) => {
+  setUser((prev) => {
+    const merged = { ...prev, ...updated };
+    try {
+      localStorage.setItem("bayti_user", JSON.stringify(merged));
+    } catch {
+      /* تجاهل تعذر الحفظ */
+    }
+    return merged;
+  });
+  setView("profile");
+}}
         onCancel={() => setView("profile")}
         {...navProps}
       />

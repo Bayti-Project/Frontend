@@ -4,16 +4,10 @@ import { FaApple, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 import heroImg from './assets/hero.jpg';
-
-const API_BASE = 'http://127.0.0.1:8000';
+import { API_BASE, mapApiError, normalizeUser, storeCredentials } from './api.js';
 
 function extractErrorMessage(data) {
-    if (!data) return 'بيانات الدخول غير صحيحة';
-    if (typeof data.detail === 'string' && data.detail) return data.detail;
-    if (Array.isArray(data.non_field_errors)) return data.non_field_errors[0];
-    if (Array.isArray(data.email)) return data.email[0];
-    if (Array.isArray(data.password)) return data.password[0];
-    return 'بيانات الدخول غير صحيحة';
+    return mapApiError(data);
 }
 
 function Login() {
@@ -48,6 +42,10 @@ function Login() {
 
             localStorage.setItem('access_token', data.access);
             localStorage.setItem('refresh_token', data.refresh);
+
+            storeCredentials(email, password);
+
+            localStorage.setItem('bayti_user', JSON.stringify(normalizeUser(data.user)));
 
             navigate('/home');
         } catch {

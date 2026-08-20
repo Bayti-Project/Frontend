@@ -2,6 +2,13 @@ import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./register.css";
 import building from "./assets/building.jpg";
+import {
+  API_BASE,
+  mapApiError,
+  roleToApi,
+  accountTypeToApi,
+  storeCredentials,
+} from "./api.js";
 
 import {
   FaCamera,
@@ -23,6 +30,7 @@ function Register() {
   const [accountType, setAccountType] = useState("فرد");
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [avatar, setAvatar] = useState("");
 
@@ -61,7 +69,7 @@ function Register() {
     e.target.value = "";
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     const errors = {};
@@ -83,19 +91,61 @@ function Register() {
 
     setError("");
     setFieldErrors({});
+    setLoading(true);
 
-    const user = {
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      password,
-      role,
-      accountType,
-      avatar,
-    };
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/register/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: name.trim(),
+          phone_number: phone.trim(),
+          email: email.trim(),
+          password,
+          confirm_password: password,
+          role: roleToApi(role),
+          account_type: accountTypeToApi(accountType),
+        }),
+      });
 
-    localStorage.setItem("bayti_user", JSON.stringify(user));
-    navigate("/home");
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(mapApiError(data));
+        setLoading(false);
+        return;
+      }
+
+      const loginRes = await fetch(`${API_BASE}/api/auth/login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const loginData = await loginRes.json().catch(() => ({}));
+
+      if (loginRes.ok && loginData.access) {
+        localStorage.setItem("access_token", loginData.access);
+        localStorage.setItem("refresh_token", loginData.refresh);
+        storeCredentials(email.trim(), password);
+      }
+
+      localStorage.setItem("bayti_user", JSON.stringify({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        whatsapp: "",
+        role,
+        accountType,
+        avatar,
+      }));
+
+      setLoading(false);
+      navigate("/home");
+    } catch {
+      setError("تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
+      setLoading(false);
+    }
   }
 
   return (
@@ -352,11 +402,11 @@ function Register() {
 
 
         {/* زر إنشاء الحساب */}
-        <button type="submit" className="register-btn">
+        <button type="submit" className="register-btn" disabled={loading}>
 
-          إنشاء حساب
+          {loading ? "جارٍ إنشاء الحساب..." : "إنشاء حساب"}
 
-          <FaArrowLeft />
+          {!loading && <FaArrowLeft />}
 
         </button>
 

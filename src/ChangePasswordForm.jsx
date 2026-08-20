@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaRecycle } from "react-icons/fa";
+import { apiFetch, mapApiError } from "./api.js";
 import "./style.css"; // نفس ملف الـ CSS المشترك
 
 export default function ChangePasswordForm() {
@@ -12,6 +13,7 @@ export default function ChangePasswordForm() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [apiError, setApiError] = useState("");
 
   // ---------- الشروط (لتحديد قوة كلمة المرور الجديدة) ----------
   const rules = [
@@ -40,15 +42,40 @@ export default function ChangePasswordForm() {
   }
 
   // ---------- إرسال الفورم ----------
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
 
+    setApiError("");
     setSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      const res = await apiFetch("/api/auth/change-password/", {
+        method: "PUT",
+        json: {
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        },
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setApiError(mapApiError(data));
+        setSubmitting(false);
+        return;
+      }
+
       setSubmitting(false);
       setSuccess(true);
-    }, 900);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      setApiError("تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
+      setSubmitting(false);
+    }
   }
 
   function handleCancel() {
@@ -56,6 +83,7 @@ export default function ChangePasswordForm() {
     setNewPassword("");
     setConfirmPassword("");
     setSuccess(false);
+    setApiError("");
   }
 
   return (
@@ -68,6 +96,12 @@ export default function ChangePasswordForm() {
       <p className="subtitle" style={{ textAlign: "center" }}>
         يرجى التأكد من اختيار كلمة مرور قوية لحماية حسابك.
       </p>
+
+      {apiError && (
+        <div className="form-error" role="alert" style={{ marginBottom: "14px", color: "#E5484D", background: "#fef2f2", padding: "10px 14px", borderRadius: "8px", fontSize: "13px", textAlign: "center" }}>
+          {apiError}
+        </div>
+      )}
 
       {/* كلمة المرور الحالية */}
       <div className="field">
@@ -164,6 +198,12 @@ export default function ChangePasswordForm() {
           إلغاء
         </button>
       </div>
+
+      {success && (
+        <p className="match-msg show ok" style={{ justifyContent: "center", marginTop: "14px" }}>
+          تم تغيير كلمة المرور، سجّل دخولك مرة أخرى بكلمة المرور الجديدة.
+        </p>
+      )}
     </form>
   );
 }

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './OwnerProfile.css';
 import './TenantProfile.css';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { apiFetch, normalizeUser } from './api.js';
 import {
     FaBookmark, FaPaperPlane, FaCheckCircle, FaTimesCircle, FaEdit,
     FaUserCheck, FaCalendarAlt, FaUserCircle
@@ -15,13 +16,39 @@ const STATUS_MAP = {
 };
 
 const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
-    const [userData] = useState({
+    const [userData, setUserData] = useState({
         name: currentUser?.name || 'أحمد محمد',
         email: currentUser?.email || 'ahmed.mohamed@example.com',
         role: currentUser?.role || 'مستأجر',
         joinedYear: currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2023',
         avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'
     });
+
+    useEffect(() => {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        apiFetch('/api/auth/profile/')
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (!data) return;
+                const u = normalizeUser(data);
+                setUserData((prev) => ({
+                    ...prev,
+                    name: u.name || prev.name,
+                    email: u.email || prev.email,
+                    phone: u.phone,
+                    role: u.role || prev.role,
+                    avatar: u.avatar || prev.avatar,
+                }));
+                const saved = JSON.parse(localStorage.getItem('bayti_user') || 'null');
+                localStorage.setItem(
+                    'bayti_user',
+                    JSON.stringify({ ...saved, name: u.name, email: u.email, phone: u.phone, role: u.role, whatsapp: u.whatsapp, avatar: u.avatar })
+                );
+            })
+            .catch(() => {});
+    }, []);
 
     const [stats] = useState([
         { id: 1, title: 'العقارات المحفوظة', count: 18, icon: <FaBookmark />, color: '#0284c7', bg: '#e0f2fe' },

@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaArrowLeft, FaSyncAlt, FaEnvelope, FaPhone } from "react-icons/fa";
-import {
-  FaFacebookF,
-  FaInstagram,
-  FaLinkedinIn,
-} from "react-icons/fa";
+import { FaArrowLeft, FaSyncAlt, FaEnvelope } from "react-icons/fa";
 import "./ForgotPassword.css";
 
 export default function ForgotPassword() {

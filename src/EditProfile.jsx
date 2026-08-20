@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { FaCheckCircle, FaUpload } from "react-icons/fa";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { mapApiError, apiFetch, resolveMediaUrl } from "./api.js";
 import "./style.css";
 import "./EditProfile.css";
 
@@ -14,7 +15,8 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
   const [phone, setPhone] = useState(currentUser?.phone || "");
   const [whatsapp, setWhatsapp] = useState(currentUser?.whatsapp || "");
   const [countryCode, setCountryCode] = useState(currentUser?.countryCode || "+972");
-  const [avatar, setAvatar] = useState(currentUser?.avatar || "");
+  const [avatar, setAvatar] = useState(resolveMediaUrl(currentUser?.avatar) || "");
+  const [avatarFile, setAvatarFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [savedData, setSavedData] = useState(null);
@@ -39,6 +41,7 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
     const reader = new FileReader();
     reader.onload = () => {
       setAvatar(reader.result);
+      setAvatarFile(file);
       setFormError("");
     };
     reader.readAsDataURL(file);
@@ -49,19 +52,46 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
     e.preventDefault();
     if (!canSubmit) return;
 
+    setFormError("");
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      setSavedData({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        whatsapp: whatsapp.trim(),
-        countryCode,
-        avatar,
+
+    const formData = new FormData();
+    formData.append("full_name", name.trim());
+    formData.append("email", email.trim());
+    formData.append("phone_number", phone.trim());
+    formData.append("whatsapp_number", countryCode ? countryCode.replace("+", "") + whatsapp.trim() : whatsapp.trim());
+    if (avatarFile) formData.append("profile_image", avatarFile);
+
+    apiFetch("/api/auth/profile/", {
+      method: "PUT",
+      formData,
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setFormError(mapApiError(data));
+          setSubmitting(false);
+          return null;
+        }
+        return data;
+      })
+      .then((data) => {
+        if (!data) return;
+        setSubmitting(false);
+        setSavedData({
+          name: data.full_name || name.trim(),
+          email: data.email || email.trim(),
+          phone: data.phone_number || phone.trim(),
+          whatsapp: data.whatsapp_number || whatsapp.trim(),
+          countryCode,
+          avatar: resolveMediaUrl(data.profile_image) || avatar,
+        });
+        setSuccess(true);
+      })
+      .catch(() => {
+        setFormError("تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
+        setSubmitting(false);
       });
-      setSuccess(true);
-    }, 900);
   }
 
   function handleBackToProfile() {

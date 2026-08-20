@@ -1,19 +1,47 @@
+import { useState, useEffect } from 'react';
 import './OwnerProfile.css';
 import Navbar from './Navbar';
 import { Link } from 'react-router-dom';
+import { apiFetch, normalizeUser } from './api.js';
 import { FaBuilding, FaHome, FaKey, FaUsers, FaPlus, FaEdit,
     FaCheckCircle, FaUserCheck, FaCalendarAlt, FaEnvelope, FaPhoneAlt,
     FaFacebookF, FaInstagram, FaLinkedinIn
 } from 'react-icons/fa';
 
 const OwnerProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick }) => {
-    const userData = {
+    const [userData, setUserData] = useState({
         name: currentUser?.name || 'أحمد محمد',
         email: currentUser?.email || 'ahmed.mohamed@example.com',
         role: currentUser?.role || 'مالك',
         joinedYear: currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2023',
         avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'
-    };
+    });
+
+    useEffect(() => {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        apiFetch('/api/auth/profile/')
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (!data) return;
+                const u = normalizeUser(data);
+                setUserData((prev) => ({
+                    ...prev,
+                    name: u.name || prev.name,
+                    email: u.email || prev.email,
+                    phone: u.phone,
+                    role: u.role || prev.role,
+                    avatar: u.avatar || prev.avatar,
+                }));
+                const saved = JSON.parse(localStorage.getItem('bayti_user') || 'null');
+                localStorage.setItem(
+                    'bayti_user',
+                    JSON.stringify({ ...saved, name: u.name, email: u.email, phone: u.phone, role: u.role, whatsapp: u.whatsapp, avatar: u.avatar })
+                );
+            })
+            .catch(() => {});
+    }, []);
 
     const stats = [
         { id: 1, title: 'العقارات المنشورة', count: 0, icon: <FaBuilding />, color: '#0284c7', bg: '#e0f2fe' },
