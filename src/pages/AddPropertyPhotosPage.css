@@ -1,0 +1,367 @@
+.add-property-photos-page {
+    /* Design Tokens */
+    --color-bg: #FFFFFF;
+    --color-divider: #F6F8FA;
+    --color-text-primary: #1F2937;
+    --color-text-secondary: #97A0AA;
+    --color-text-muted: #575E69;
+    --color-step-inactive: #AEB6C2;
+    --color-primary: #0282AD;
+    --color-primary-bg-soft: #E0EFF5;
+    --color-dropzone-bg: #E6F3F7;
+    --color-dropzone-border: #F58A8A;
+    --color-upload-btn-bg: #022747;
+    --color-error-bg: #FDECEC;
+    --color-error-border: #F69898;
+    --color-error-text: #EF4444;
+    --color-error-text-bold: #DC2626;
+    --color-disabled-btn: #9AA9B5;
+    /* صف تقدم الرفع */
+    --color-row-bg: #E6F3F7;
+    --color-progress-fill: #0282AD;
+    --color-progress-track: #CAE5ED;
+    --color-file-icon: #E61B1B;
+    --color-filename-text: #1F2937;
+    --radius-box: 10px;
+    --radius-btn: 8px;
+
+    max-width: none;
+    width: 100%;
+    margin: 0 auto;
+    padding: 16px 24px 70px;
+    box-sizing: border-box;
+    direction: rtl;
+    background-color: transparent;
+    font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+    color: var(--color-text-primary);
+}
+
+.ph-inner {
+    max-width: 1180px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    background-color: #FFFFFF;
+    border: 1px solid var(--color-divider);
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+}
+
+/* 1) رأس الصفحة */
+.ph-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+}
+
+.ph-header p {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* 2) شريط الخطوات */
+.ph-stepper {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 24px;
+}
+
+.ph-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.ph-step-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-step-inactive);
+    box-sizing: border-box;
+}
+
+.ph-step-icon.active {
+    background-color: var(--color-primary-bg-soft);
+    border: 1.5px solid var(--color-primary);
+    color: var(--color-primary);
+}
+
+.ph-step-line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-divider);
+    margin-top: 17px;
+}
+
+.ph-step-label {
+    font-size: 12px;
+    color: var(--color-step-inactive);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.ph-step-label.active {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* 3) عنوان قسم الصور */
+.ph-section {
+    margin-top: 28px;
+    border-top: 1px solid var(--color-divider);
+    padding-top: 24px;
+}
+
+.ph-section-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ph-section-head h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+}
+
+.ph-section-head svg {
+    color: var(--color-text-muted);
+}
+
+.ph-section-divider {
+    height: 1px;
+    background-color: var(--color-divider);
+    margin: 12px 0 20px;
+}
+
+/* 4) صندوق السحب والإفلات */
+.ph-dropzone {
+    width: 100%;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-dropzone-bg);
+    border: 2px dashed var(--color-dropzone-border);
+    border-radius: var(--radius-box);
+    padding: 18px 16px;
+    box-sizing: border-box;
+    cursor: pointer;
+    text-align: center;
+}
+
+.ph-dropzone-cloud {
+    color: #1F2937;
+}
+
+.ph-dropzone-title {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.ph-dropzone-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.ph-dropzone-btn {
+    margin-top: 14px;
+    padding: 10px 32px;
+    background-color: var(--color-upload-btn-bg);
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+    font-family: inherit;
+    pointer-events: none;
+}
+
+/* 5) صف تقدم رفع الملف */
+.ph-upload-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ph-upload-item {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--color-row-bg);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-height: 50px;
+}
+
+.ph-upload-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.ph-upload-filename {
+    font-size: 12px;
+    color: var(--color-filename-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+    flex-shrink: 0;
+}
+
+.ph-upload-progress {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.ph-upload-percent {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-progress-fill);
+}
+
+.ph-upload-bar {
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background-color: var(--color-progress-track);
+    overflow: hidden;
+}
+
+.ph-upload-fill {
+    height: 100%;
+    background-color: var(--color-progress-fill);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.ph-upload-file-icon {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 4px;
+    background-color: var(--color-file-icon);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ph-upload-item.done .ph-upload-progress {
+    display: none;
+}
+
+.ph-upload-done-check {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #22C55E;
+    font-size: 12px;
+}
+
+.ph-upload-delete {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 50%;
+    background-color: var(--color-file-icon);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 12px;
+}
+
+.ph-upload-delete:hover {
+    background-color: #c21313;
+}
+
+/* 6) صندوق تنبيه الخطأ */
+.ph-error {
+    margin-top: 20px;
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error-border);
+    border-radius: var(--radius-box);
+    padding: 14px 18px;
+}
+
+.ph-error-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-error-text-bold);
+}
+
+.ph-error-title svg {
+    flex-shrink: 0;
+}
+
+.ph-error-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-error-text);
+    line-height: 1.6;
+}
+
+/* 7) زر الإجراء */
+.ph-actions {
+    display: flex;
+    margin-top: 24px;
+}
+
+.ph-next {
+    margin-inline-start: auto;
+    padding: 10px 36px;
+    background-color: var(--color-disabled-btn);
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-btn);
+    cursor: not-allowed;
+    font-family: inherit;
+    transition: background-color 0.2s ease;
+}
+
+.ph-next:not(:disabled) {
+    background-color: #16243F;
+    cursor: pointer;
+}
+
+.ph-next:not(:disabled):hover {
+    background-color: #1E3357;
+}

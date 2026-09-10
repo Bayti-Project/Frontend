@@ -34,9 +34,9 @@ export default function Navbar({ onProfileClick, onChangePasswordClick, onLogout
               الرئيسية
             </a>
           </li>
-          <li><a href="#">العقارات</a></li>
-          <li><a href="#">المفضلة</a></li>
-          <li><a href="#">الدعم</a></li>
+          <li><a href="#">البحث</a></li>
+          <li><a href="#">طلباتي</a></li>
+          <li><a href="#">المحفوظات</a></li>
         </ul>
       </nav>
 

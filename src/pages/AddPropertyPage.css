@@ -1,0 +1,419 @@
+.add-property-page {
+    /* Design Tokens */
+    --color-bg: #FFFFFF;
+    --color-divider: #E7EBEF;
+    --color-text-primary: #1F2937;
+    --color-text-secondary: #79828E;
+    --color-primary: #045A95;
+    --color-error-border: #F7A8A8;
+    --color-error-bg: #FDECEC;
+    --color-error-text: #EF4444;
+    --color-error-text-bold: #DC2626;
+    --color-disabled-btn: #9AA9B5;
+    --radius-input: 10px;
+    --radius-card: 16px;
+    --radius-btn: 10px;
+
+    max-width: none;
+    width: 100%;
+    margin: 0 auto;
+    padding: 16px 24px 70px;
+    box-sizing: border-box;
+    direction: rtl;
+    background-color: transparent;
+    font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+    color: var(--color-text-primary);
+}
+
+.ap-inner {
+    max-width: 1180px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    background-color: #FFFFFF;
+    border: 1px solid var(--color-divider);
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+}
+
+/* 1) رأس الصفحة */
+.ap-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+}
+
+.ap-header p {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* 2) شريط الخطوات */
+.ap-stepper {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 24px;
+}
+
+.ap-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 96px;
+    flex-shrink: 0;
+}
+
+.ap-step-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #E4E8EC;
+    color: var(--color-text-secondary);
+    box-sizing: border-box;
+}
+
+.ap-step-icon.active {
+    border-color: var(--color-primary);
+}
+
+.ap-step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+}
+
+.ap-step-line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-divider);
+    margin-top: 14px;
+    /* منتصف الدائرة (28px/2) */
+}
+
+.ap-step-label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.ap-step-label.active {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* 3) النموذج */
+.ap-form {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.ap-section-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ap-section-head h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+}
+
+.ap-section-divider {
+    height: 1px;
+    background-color: var(--color-divider);
+    margin: 12px 0 16px;
+}
+
+/* الحقول */
+.ap-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ap-field+.ap-field,
+.ap-row .ap-field {
+    margin-top: 0;
+}
+
+.ap-field label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+}
+
+.ap-field input[type="text"],
+.ap-field input[type="number"],
+.ap-field select,
+.ap-field textarea {
+    width: 100%;
+    height: 48px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 1.5px solid var(--color-divider);
+    border-radius: var(--radius-input);
+    background-color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.ap-field input[type="text"]:focus,
+.ap-field input[type="number"]:focus,
+.ap-field select:focus,
+.ap-field textarea:focus {
+    border-color: var(--color-primary);
+}
+
+/* تنسيق حالة الخطأ فقط عند وجود كلاس .error */
+.ap-field input.error,
+.ap-field select.error,
+.ap-field textarea.error,
+.ap-input-wrap.error input,
+.ap-select-wrap.error select {
+    border-color: var(--color-error-border) !important;
+    background-color: var(--color-error-bg) !important;
+}
+
+.ap-field textarea {
+    height: 90px;
+    padding: 12px 14px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.ap-field input::placeholder,
+.ap-field textarea::placeholder {
+    color: var(--color-text-secondary);
+}
+
+.ap-field input[type="number"]::-webkit-outer-spin-button,
+.ap-field input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.ap-field input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* سعر مع وحدة */
+.ap-input-wrap {
+    position: relative;
+}
+
+.ap-input-wrap input {
+    padding-left: 60px;
+}
+
+.ap-unit {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 14px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    pointer-events: none;
+}
+
+/* قائمة منسدلة بسهم */
+.ap-select-wrap {
+    position: relative;
+}
+
+.ap-select-wrap select {
+    padding-left: 36px;
+}
+
+.ap-select-wrap>svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-secondary);
+    pointer-events: none;
+}
+
+/* تلميحات الخطأ */
+.ap-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--color-error-text);
+}
+
+.ap-hint svg {
+    flex-shrink: 0;
+}
+
+/* الصفوف */
+.ap-row {
+    display: flex;
+    gap: 12px;
+}
+
+.ap-row .ap-field {
+    flex: 1;
+    min-width: 0;
+}
+
+/* عدّاد الغرف/الحمامات */
+.ap-stepper-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    box-sizing: border-box;
+    border: 1.5px solid var(--color-divider);
+    border-radius: var(--radius-input);
+    background-color: #fff;
+}
+
+.ap-stepper-control button {
+    width: 40px;
+    height: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 16px;
+}
+
+.ap-stepper-control button.plus {
+    border-inline-start: 1px solid var(--color-divider);
+}
+
+.ap-stepper-control .value {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+/* 4) الميزات */
+.ap-features {
+    margin-top: 20px;
+}
+
+.ap-features h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    color: var(--color-text-primary);
+}
+
+.ap-features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.ap-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-primary);
+    cursor: pointer;
+}
+
+.ap-checkbox input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border: 1.5px solid #CBD2D9;
+    border-radius: 4px;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.ap-checkbox input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.ap-checkbox input:checked::after {
+    content: "✓";
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* 5) صندوق تنبيه الخطأ */
+.ap-error-banner {
+    margin-top: 24px;
+    background-color: var(--color-error-bg);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+}
+
+.ap-error-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-error-text-bold);
+    margin-bottom: 4px;
+}
+
+.ap-error-sub {
+    font-size: 12px;
+    color: var(--color-error-text);
+    line-height: 1.6;
+}
+
+/* زر التالي */
+.ap-next-btn {
+    width: 100%;
+    height: 48px;
+    margin-top: 16px;
+    border: none;
+    border-radius: var(--radius-btn);
+    background-color: var(--color-disabled-btn);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: not-allowed;
+    transition: background-color 0.2s ease;
+}
+
+.ap-next-btn:not(:disabled) {
+    background-color: #16243F;
+    cursor: pointer;
+}
+
+.ap-next-btn:not(:disabled):hover {
+    background-color: #1E3357;
+}

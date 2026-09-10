@@ -1,5 +1,5 @@
-export const API_HOST = 'https://bayti-backend-sprint1.onrender.com';
-export const API_BASE = import.meta.env.DEV ? '' : API_HOST;
+export const API_HOST = 'https://bayti-backend.onrender.com';
+export const API_BASE = API_HOST; // اجعليها تستخدم API_HOST مباشرة
 
 // يحوّل أي مسار صورة من الخادم (مثل /profile_images/x.png) إلى رابط كامل
 export function resolveMediaUrl(path) {
@@ -122,8 +122,8 @@ export function normalizeUser(u) {
       u?.account_type === 'office' ? 'مكتب عقاري' : 'فرد',
     role:
       u?.role === 'owner' ? 'مالك عقار'
-      : u?.role === 'tenant' ? 'مستأجر'
-      : u?.role || 'مستأجر',
+        : u?.role === 'tenant' ? 'مستأجر'
+          : u?.role || 'مستأجر',
     avatar: resolveMediaUrl(u?.profile_image || u?.avatar || ''),
   };
 }

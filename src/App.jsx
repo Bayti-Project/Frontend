@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import ResetPasswordForm from "./ResetPasswordForm";
-import ChangePasswordForm from "./ChangePasswordForm";
-import OwnerProfile from "./OwnerProfile";
-import TenantProfile from "./TenantProfile";
-import EditProfile from "./EditProfile";
-import Home from "./Home";
-import Login from "./Login";
-import Register from "./register";
-import ForgotPassword from "./ForgotPassword";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
-import { resolveMediaUrl } from "./api.js";
-import "./style.css";
+import ResetPasswordForm from "./pages/ResetPasswordForm";
+import ChangePasswordForm from "./pages/ChangePasswordForm";
+import OwnerProfile from "./pages/OwnerProfile";
+import TenantProfile from "./pages/TenantProfile";
+import EditProfile from "./pages/EditProfile";
+import Home from "./pages/HomeVisitor";
+import HomeTenant from "./pages/HomeTenant";
+import OwnerHome from "./pages/OwnerHome";
+import PropertyEditPage from "./pages/PropertyEditPage";
+import AddPropertyPage from "./pages/AddPropertyPage";
+import AddPropertyPhotosPage from "./pages/AddPropertyPhotosPage";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import Navbar from "./components/Navbar";
+import LandingFooter from "./components/LandingFooter";
+import { resolveMediaUrl } from "./services/api.js";
+import "./styles/style.css";
 
 export default function App() {
   const navigate = useNavigate();
@@ -40,7 +45,12 @@ export default function App() {
   const navProps = {
     onHomeClick: () => {
       setView("password");
-      navigate("/home");
+      const role = user.role || "";
+      const isTenant = role.includes("مستأجر") || role === "tenant";
+      const isOwner = role.includes("مالك") || role === "owner";
+      if (isTenant) navigate("/home-tenant");
+      else if (isOwner) navigate("/home-owner");
+      else navigate("/home");
     },
     onProfileClick: () => {
       try {
@@ -66,7 +76,7 @@ export default function App() {
         role: "مالك",
         accountType: "فرد",
         phone: "0598 123 456",
-createdAt: "2023-01-01",
+        createdAt: "2023-01-01",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
         city: "غزة - الرمال",
         bio: "صاحب عقارات في قطاع غزة",
@@ -81,6 +91,10 @@ createdAt: "2023-01-01",
       currentUser: user,
       ...navProps,
       onEditProfileClick: () => setView("edit"),
+      onAddPropertyClick: () => {
+        setView("password");
+        navigate("/add-property");
+      },
     };
     return isOwner ? (
       <OwnerProfile {...profileProps} />
@@ -93,18 +107,18 @@ createdAt: "2023-01-01",
     return (
       <EditProfile
         currentUser={user}
-onSave={(updated) => {
-  setUser((prev) => {
-    const merged = { ...prev, ...updated };
-    try {
-      localStorage.setItem("bayti_user", JSON.stringify(merged));
-    } catch {
-      /* تجاهل تعذر الحفظ */
-    }
-    return merged;
-  });
-  setView("profile");
-}}
+        onSave={(updated) => {
+          setUser((prev) => {
+            const merged = { ...prev, ...updated };
+            try {
+              localStorage.setItem("bayti_user", JSON.stringify(merged));
+            } catch {
+              /* تجاهل تعذر الحفظ */
+            }
+            return merged;
+          });
+          setView("profile");
+        }}
         onCancel={() => setView("profile")}
         {...navProps}
       />
@@ -113,10 +127,62 @@ onSave={(updated) => {
 
   return (
     <Routes>
+      {/* 1. إضافة مسار الصفحة الرئيسية للرابط الأساسي "/" */}
+      <Route path="/" element={<Home {...navProps} />} />
+
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/home" element={<Home {...navProps} />} />
+      <Route path="/home-tenant" element={<HomeTenant {...navProps} />} />
+      <Route
+        path="/home-owner"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <OwnerHome />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
+      <Route
+        path="/property-edit/:id"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <PropertyEditPage />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
+      <Route
+        path="/add-property/photos"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <AddPropertyPhotosPage />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
+      <Route
+        path="/add-property"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <AddPropertyPage />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
       <Route
         path="/change-password"
         element={
@@ -128,19 +194,24 @@ onSave={(updated) => {
           </div>
         }
       />
+      {/* صفحة إعادة تعيين كلمة المرور بكل الصيغ الممكنة، مع ناف بار مثل باقي الصفحات */}
       <Route path="/reset-password" element={<ResetPasswordForm />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordForm />} />
       <Route
-        path="*"
+        path="/ResetPasswordForm"
         element={
           <div className="page">
             <Navbar {...navProps} />
             <main className="main">
               <ResetPasswordForm />
             </main>
-            <Footer />
           </div>
         }
       />
+
+      {/* المسار الاحتياطي يحوّل لأي رابط غير معروف إلى الصفحة الرئيسية */}
+      <Route path="*" element={<Home {...navProps} />} />
     </Routes>
   );
+
 }

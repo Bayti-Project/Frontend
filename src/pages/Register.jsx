@@ -1,14 +1,15 @@
 import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./register.css";
-import building from "./assets/building.jpg";
+import building from "../assets/building.jpg";
+
 import {
   API_BASE,
   mapApiError,
   roleToApi,
   accountTypeToApi,
   storeCredentials,
-} from "./api.js";
+} from "../services/api.js";
 
 import {
   FaCamera,
@@ -94,18 +95,20 @@ function Register() {
     setLoading(true);
 
     try {
+      const payload = {
+        full_name: name.trim(),
+        phone_number: phone.trim(),
+        email: email.trim(),
+        password,
+        confirm_password: password,
+        role: roleToApi(role),
+        account_type: accountTypeToApi(accountType),
+      };
+
       const res = await fetch(`${API_BASE}/api/auth/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: name.trim(),
-          phone_number: phone.trim(),
-          email: email.trim(),
-          password,
-          confirm_password: password,
-          role: roleToApi(role),
-          account_type: accountTypeToApi(accountType),
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -116,6 +119,7 @@ function Register() {
         return;
       }
 
+      // تسجيل دخول تلقائي بعد نجاح إنشاء الحساب
       const loginRes = await fetch(`${API_BASE}/api/auth/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,18 +134,27 @@ function Register() {
         storeCredentials(email.trim(), password);
       }
 
-      localStorage.setItem("bayti_user", JSON.stringify({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        whatsapp: "",
-        role,
-        accountType,
-        avatar,
-      }));
+      localStorage.setItem(
+        "bayti_user",
+        JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          whatsapp: "",
+          role,
+          accountType,
+          avatar,
+        })
+      );
 
       setLoading(false);
-      navigate("/home");
+      navigate(
+        role === "مستأجر"
+          ? "/home-tenant"
+          : role === "مالك عقار"
+            ? "/home-owner"
+            : "/home"
+      );
     } catch {
       setError("تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
       setLoading(false);
@@ -150,46 +163,25 @@ function Register() {
 
   return (
     <div className="register">
-
       {/* الصورة */}
       <div className="image-section">
-
         <img src={building} alt="Building" />
-
         <div className="overlay"></div>
-
-        <div className="logo">
-          Bayti
-        </div>
-
+        <div className="logo">Bayti</div>
         <div className="image-content">
-
-          <h1>
-            مستقبلك يبدأ من هنا
-          </h1>
-
+          <h1>مستقبلك يبدأ من هنا</h1>
           <p>
             المساحات المكتبية العصرية. بيتي هي وجهتك الموثوقة للاستثمار.
             <br />
             اكتشف أرقى العقارات في قطاع غزة، من الشقق الفاخرة إلى البحث عن السكن المثالي.
           </p>
-
         </div>
-
       </div>
 
-
-      {/* الفورم */}
+      {/* النموذج */}
       <form className="form-section" onSubmit={handleSubmit} noValidate>
-
-        <h2>
-          إنشاء حساب جديد
-        </h2>
-
-        <p className="subtitle">
-          انضم إلى مجتمع بيتي العقاري الرائد في قطاع غزة.
-        </p>
-
+        <h2>إنشاء حساب جديد</h2>
+        <p className="subtitle">انضم إلى مجتمع بيتي العقاري الرائد في قطاع غزة.</p>
 
         {/* صورة المستخدم */}
         <button
@@ -199,7 +191,6 @@ function Register() {
           style={avatar ? { backgroundImage: `url(${avatar})` } : undefined}
         >
           {!avatar && <FaCamera />}
-
           <span className="edit-dot"></span>
         </button>
 
@@ -214,18 +205,16 @@ function Register() {
         <p className="upload-text">
           {avatar ? "انقر لتغيير الصورة" : "صورة الملف الشخصي"}
         </p>
-        {fieldErrors.avatar && <p className="reg-error" role="alert">{fieldErrors.avatar}</p>}
-
+        {fieldErrors.avatar && (
+          <p className="reg-error" role="alert">
+            {fieldErrors.avatar}
+          </p>
+        )}
 
         {/* الاسم ورقم الهاتف */}
         <div className="row">
-
           <div className="field">
-
-            <label htmlFor="regName">
-              الاسم
-            </label>
-
+            <label htmlFor="regName">الاسم</label>
             <input
               id="regName"
               type="text"
@@ -237,12 +226,13 @@ function Register() {
               }}
               className={fieldErrors.name ? "field-error-input" : ""}
             />
-            {fieldErrors.name && <span className="field-error-msg">{fieldErrors.name}</span>}
-
+            {fieldErrors.name && (
+              <span className="field-error-msg">{fieldErrors.name}</span>
+            )}
           </div>
+
           <div className="field">
             <label htmlFor="regPhone">رقم الهاتف</label>
-
             <input
               id="regPhone"
               type="tel"
@@ -255,18 +245,15 @@ function Register() {
               }}
               className={fieldErrors.phone ? "field-error-input" : ""}
             />
-            {fieldErrors.phone && <span className="field-error-msg">{fieldErrors.phone}</span>}
+            {fieldErrors.phone && (
+              <span className="field-error-msg">{fieldErrors.phone}</span>
+            )}
           </div>
-
         </div>
 
         {/* البريد الإلكتروني */}
         <div className="field full">
-
-          <label htmlFor="regEmail">
-            البريد الإلكتروني
-          </label>
-
+          <label htmlFor="regEmail">البريد الإلكتروني</label>
           <input
             id="regEmail"
             type="email"
@@ -278,18 +265,14 @@ function Register() {
             }}
             className={fieldErrors.email ? "field-error-input" : ""}
           />
-          {fieldErrors.email && <span className="field-error-msg">{fieldErrors.email}</span>}
-
+          {fieldErrors.email && (
+            <span className="field-error-msg">{fieldErrors.email}</span>
+          )}
         </div>
-
 
         {/* كلمة المرور */}
         <div className="field full">
-
-          <label htmlFor="regPassword">
-            كلمة المرور
-          </label>
-
+          <label htmlFor="regPassword">كلمة المرور</label>
           <input
             id="regPassword"
             type="password"
@@ -301,33 +284,24 @@ function Register() {
             }}
             className={fieldErrors.password ? "field-error-input" : ""}
           />
-          {fieldErrors.password && <span className="field-error-msg">{fieldErrors.password}</span>}
-
+          {fieldErrors.password && (
+            <span className="field-error-msg">{fieldErrors.password}</span>
+          )}
         </div>
-
 
         {/* صفة المستخدم */}
         <div className="field full">
-
-          <label>
-            صفة المستخدم
-          </label>
-
+          <label>صفة المستخدم</label>
           <div className="buttons" role="group" aria-label="صفة المستخدم">
-
             <button
               type="button"
               className={role === "مالك عقار" ? "option active" : "option"}
               aria-pressed={role === "مالك عقار"}
               onClick={() => setRole("مالك عقار")}
             >
-
               <FaBuilding />
-
               مالك عقار
-
             </button>
-
 
             <button
               type="button"
@@ -335,27 +309,16 @@ function Register() {
               aria-pressed={role === "مستأجر"}
               onClick={() => setRole("مستأجر")}
             >
-
               <FaUserTie />
-
               مستأجر
-
             </button>
-
           </div>
-
         </div>
-
 
         {/* نوع الحساب */}
         <div className="field full">
-
-          <label>
-            نوع الحساب
-          </label>
-
+          <label>نوع الحساب</label>
           <div className="buttons" role="group" aria-label="نوع الحساب">
-
             <button
               type="button"
               className={accountType === "فرد" ? "option active" : "option"}
@@ -365,7 +328,6 @@ function Register() {
               فرد
             </button>
 
-
             <button
               type="button"
               className={accountType === "مكتب عقاري" ? "option active" : "option"}
@@ -374,15 +336,11 @@ function Register() {
             >
               مكتب عقاري
             </button>
-
           </div>
-
         </div>
-
 
         {/* الموافقة */}
         <div className="agree">
-
           <input
             type="checkbox"
             checked={agree}
@@ -391,39 +349,29 @@ function Register() {
               setError("");
             }}
           />
-
           <span>
             أوافق على&nbsp;<a href="#">شروط الخدمة</a>&nbsp;و&nbsp;<a href="#">سياسة الخصوصية</a>&nbsp;الخاصة بمنصة بيتي.
           </span>
-
         </div>
 
-        {error && <p className="reg-error" role="alert">{error}</p>}
-
+        {error && (
+          <p className="reg-error" role="alert">
+            {error}
+          </p>
+        )}
 
         {/* زر إنشاء الحساب */}
         <button type="submit" className="register-btn" disabled={loading}>
-
           {loading ? "جارٍ إنشاء الحساب..." : "إنشاء حساب"}
-
           {!loading && <FaArrowLeft />}
-
         </button>
-
 
         {/* تسجيل الدخول */}
         <p className="login">
-
           لديك حساب بالفعل؟
-
-          <Link to="/login">
-            تسجيل الدخول
-          </Link>
-
+          <Link to="/login">تسجيل الدخول</Link>
         </p>
-
       </form>
-
     </div>
   );
 }

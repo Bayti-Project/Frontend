@@ -3,8 +3,8 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaApple, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
-import heroImg from './assets/hero.jpg';
-import { API_BASE, mapApiError, normalizeUser, storeCredentials } from './api.js';
+import heroImg from '../assets/hero.jpg';
+import { API_HOST, mapApiError, normalizeUser, storeCredentials } from '../services/api.js';
 
 function extractErrorMessage(data) {
     return mapApiError(data);
@@ -26,30 +26,39 @@ function Login() {
         setLoading(true);
 
         try {
-            const res = await fetch(`${API_BASE}/api/auth/login/`, {
+            // تم التعديل إلى API_HOST لضمان الاتصال المباشر بسيرفر Render
+            const res = await fetch(`${API_HOST}/api/auth/login/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email: email.trim(), password }),
             });
 
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
-                setError(extractErrorMessage(data));
+                setError(extractErrorMessage(data) || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
                 setLoading(false);
                 return;
             }
 
-            localStorage.setItem('access_token', data.access);
-            localStorage.setItem('refresh_token', data.refresh);
+            if (data.access) {
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+            }
 
-            storeCredentials(email, password);
+            if (storeCredentials) {
+                storeCredentials(email.trim(), password);
+            }
 
-            localStorage.setItem('bayti_user', JSON.stringify(normalizeUser(data.user)));
+            if (data.user) {
+                localStorage.setItem('bayti_user', JSON.stringify(normalizeUser ? normalizeUser(data.user) : data.user));
+            }
 
-            navigate('/home');
-        } catch {
-            setError('تعذر الاتصال بالخادم، تأكد من تشغيل الخادم وحاول مرة أخرى.');
+            const userRole = data.user?.role;
+            navigate(userRole === 'tenant' ? '/home-tenant' : userRole === 'owner' ? '/home-owner' : '/home');
+        } catch (err) {
+            console.error('Login error:', err);
+            setError('تعذر الاتصال بالخادم، تأكد من الاتصال بالإنترنت وحاول مرة أخرى.');
         } finally {
             setLoading(false);
         }

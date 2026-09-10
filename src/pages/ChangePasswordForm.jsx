@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { FaRecycle } from "react-icons/fa";
-import { apiFetch, mapApiError } from "./api.js";
-import "./style.css"; // نفس ملف الـ CSS المشترك
+import { FaRecycle, FaEye, FaEyeSlash } from "react-icons/fa";
+import { apiFetch, mapApiError } from "../services/api.js";
+import "../styles/style.css";
 
-export default function ChangePasswordForm() {
-  // ---------- الحالة (State) ----------
+export default function ChangePasswordForm({ onSuccess, onCancel }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -15,7 +14,6 @@ export default function ChangePasswordForm() {
   const [success, setSuccess] = useState(false);
   const [apiError, setApiError] = useState("");
 
-  // ---------- الشروط (لتحديد قوة كلمة المرور الجديدة) ----------
   const rules = [
     (v) => v.length >= 8,
     (v) => /[A-Z]/.test(v),
@@ -25,14 +23,10 @@ export default function ChangePasswordForm() {
 
   const passedCount = rules.filter((test) => test(newPassword)).length;
   const allRulesPassed = passedCount === rules.length;
-
-  // حالة التطابق
   const matches = confirmPassword.length > 0 && confirmPassword === newPassword;
   const showMatchMsg = confirmPassword.length > 0;
 
-  // الزر يتفعل فقط لو كلمة المرور الحالية مكتوبة + الجديدة قوية + التأكيد متطابق
-  const canSubmit =
-    currentPassword.length > 0 && allRulesPassed && matches;
+  const canSubmit = currentPassword.length > 0 && allRulesPassed && matches;
 
   function strengthClass(index) {
     if (index >= passedCount) return "";
@@ -41,7 +35,6 @@ export default function ChangePasswordForm() {
     return "filled-strong";
   }
 
-  // ---------- إرسال الفورم ----------
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -50,10 +43,12 @@ export default function ChangePasswordForm() {
     setSubmitting(true);
 
     try {
+      // إرسال كائن الـ json مباشرة ليتم التعامل معه داخل apiFetch
       const res = await apiFetch("/api/auth/change-password/", {
         method: "PUT",
         json: {
           current_password: currentPassword,
+          old_password: currentPassword,
           new_password: newPassword,
           confirm_password: confirmPassword,
         },
@@ -72,22 +67,29 @@ export default function ChangePasswordForm() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch {
       setApiError("تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
       setSubmitting(false);
     }
   }
 
-  function handleCancel() {
+  function handleCancelClick() {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
     setSuccess(false);
     setApiError("");
+    if (onCancel) {
+      onCancel();
+    }
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit} noValidate>
+    <form className="card" onSubmit={handleSubmit} noValidate dir="rtl">
       <div className="card-icon">
         <FaRecycle />
       </div>
@@ -98,7 +100,19 @@ export default function ChangePasswordForm() {
       </p>
 
       {apiError && (
-        <div className="form-error" role="alert" style={{ marginBottom: "14px", color: "#E5484D", background: "#fef2f2", padding: "10px 14px", borderRadius: "8px", fontSize: "13px", textAlign: "center" }}>
+        <div
+          className="form-error"
+          role="alert"
+          style={{
+            marginBottom: "14px",
+            color: "#E5484D",
+            background: "#fef2f2",
+            padding: "10px 14px",
+            borderRadius: "8px",
+            fontSize: "13px",
+            textAlign: "center",
+          }}
+        >
           {apiError}
         </div>
       )}
@@ -110,7 +124,7 @@ export default function ChangePasswordForm() {
           <input
             id="currentPassword"
             type={showCurrent ? "text" : "password"}
-            placeholder="أدخل كلمة المرور"
+            placeholder="أدخل كلمة المرور الحالية"
             autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
@@ -121,7 +135,7 @@ export default function ChangePasswordForm() {
             aria-label={showCurrent ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
             onClick={() => setShowCurrent((prev) => !prev)}
           >
-            👁
+            {showCurrent ? <FaEyeSlash /> : <FaEye />}
           </button>
         </div>
       </div>
@@ -133,7 +147,7 @@ export default function ChangePasswordForm() {
           <input
             id="newPassword"
             type={showNew ? "text" : "password"}
-            placeholder="أدخل كلمة المرور"
+            placeholder="أدخل كلمة المرور الجديدة"
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -144,11 +158,11 @@ export default function ChangePasswordForm() {
             aria-label={showNew ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
             onClick={() => setShowNew((prev) => !prev)}
           >
-            👁
+            {showNew ? <FaEyeSlash /> : <FaEye />}
           </button>
         </div>
 
-        {/* شريط القوة فقط (بدون قائمة شروط تفصيلية) */}
+        {/* شريط قوة كلمة المرور */}
         <div className="strength-bar" style={{ marginTop: "10px" }}>
           {[0, 1, 2, 3].map((i) => (
             <span key={i} className={strengthClass(i)} />
@@ -163,7 +177,7 @@ export default function ChangePasswordForm() {
           <input
             id="confirmPassword"
             type={showConfirm ? "text" : "password"}
-            placeholder="أدخل كلمة المرور"
+            placeholder="أعد إدخال كلمة المرور الجديدة"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -175,7 +189,7 @@ export default function ChangePasswordForm() {
             aria-label={showConfirm ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
             onClick={() => setShowConfirm((prev) => !prev)}
           >
-            👁
+            {showConfirm ? <FaEyeSlash /> : <FaEye />}
           </button>
         </div>
         {showMatchMsg && (
@@ -194,14 +208,14 @@ export default function ChangePasswordForm() {
               ? "جارٍ الحفظ..."
               : "تحديث كلمة المرور"}
         </button>
-        <button type="button" className="cancel-btn" onClick={handleCancel}>
+        <button type="button" className="cancel-btn" onClick={handleCancelClick}>
           إلغاء
         </button>
       </div>
 
       {success && (
         <p className="match-msg show ok" style={{ justifyContent: "center", marginTop: "14px" }}>
-          تم تغيير كلمة المرور، سجّل دخولك مرة أخرى بكلمة المرور الجديدة.
+          تم تغيير كلمة المرور بنجاح.
         </p>
       )}
     </form>
