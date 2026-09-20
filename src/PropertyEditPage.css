@@ -1,0 +1,364 @@
+/* =====================================================================
+   PropertyEditPage.css
+   -----------------------------------------------------------------
+   الـ CSS الخاص حصراً بشاشة تعديل العقار (PropertyEditPage.jsx):
+   الجريد الرئيسي، الشريط الجانبي (رفع الصور، حالة العقار)، فورم
+   البيانات، عداد الغرف/الحمامات، شبكة المرافق، وبانر "تم الحفظ".
+
+   يُستورد مباشرة داخل PropertyEditPage.jsx:
+     import "./PropertyEditPage.css";
+
+   الأزرار المشتركة (cancel-btn, submit-btn) والمتغيرات العامة
+   (:root) لسا موجودين بـ style.css لأنهم مستخدمين بصفحات تانية
+   بالمشروع (صفحات الباسورد، OwnerHome...).
+   ===================================================================== */
+
+
+
+/* ---------- Property Edit Page (تعديل عقار) ---------- */
+.edit-page{
+  flex:1;
+  background: var(--bg);
+  padding: 40px 20px 70px;
+}
+.edit-page-inner{
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.edit-title{
+  font-size: 26px;
+  font-weight:800;
+  color: var(--navy);
+  margin: 0 0 28px;
+}
+
+.edit-grid{
+  display:grid;
+  grid-template-columns: 320px 1fr;
+  gap: 28px;
+  align-items:start;
+  /* الصفحة كلها RTL، لكن نريد عمود الصور فعليًا على اليسار
+     وعمود المعلومات على اليمين (كما في التصميم الأصلي).
+     نفرض اتجاه LTR على شبكة الأعمدة فقط، ثم نعيد RTL لمحتوى كل عمود. */
+  direction: ltr;
+}
+
+/* --- Sidebar --- */
+.edit-sidebar{
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+  direction: rtl;
+}
+.edit-photos-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.edit-photos-head h2{
+  font-size:15px;
+  font-weight:800;
+  color: var(--navy);
+  margin:0;
+}
+.edit-add-photo-link{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:none;
+  border:none;
+  color: var(--blue-accent);
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  padding:0;
+}
+
+.edit-main-photo{
+  position:relative;
+  border-radius: 12px;
+  overflow:hidden;
+  margin-bottom:8px;
+}
+.edit-main-photo img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  object-position: right center;
+  display:block;
+}
+.edit-photo-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px;
+  direction: ltr;
+}
+.edit-photo-item{
+  position:relative;
+  border-radius:9px;
+  overflow:hidden;
+}
+.edit-photo-item img{
+  width:100%;
+  height:96px;
+  object-fit:cover;
+  border-radius:9px;
+  display:block;
+}
+
+/* Per-image delete control (works on both the main photo and grid thumbnails) */
+.edit-photo-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  width:26px;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:50%;
+  background: rgba(17, 24, 39, 0.6);
+  color:#fff;
+  cursor:pointer;
+  padding:0;
+  transition: background .15s ease, transform .1s ease;
+}
+.edit-photo-remove-btn:hover,
+.edit-photo-remove-btn:focus-visible{
+  background:#DC2626;
+  transform: scale(1.07);
+}
+.edit-photo-remove-btn-main{
+  top:10px;
+  right:10px;
+  width:30px;
+  height:30px;
+}
+.edit-photos-empty{
+  text-align:center;
+  font-size:13px;
+  color: var(--text-faint);
+  padding: 14px 0;
+  border:1.6px dashed var(--border);
+  border-radius:12px;
+}
+
+.edit-dropzone{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+  border:1.6px dashed var(--border);
+  border-radius:12px;
+  padding: 26px 16px;
+  cursor:pointer;
+  color: var(--text-muted);
+  transition: border-color .15s ease, background .15s ease;
+}
+.edit-dropzone:hover{
+  border-color: var(--blue-accent);
+  background:#FAFBFC;
+}
+.edit-dropzone-title{
+  font-size:14px;
+  font-weight:700;
+  color: var(--text-dark);
+}
+.edit-dropzone-hint{
+  font-size:12px;
+  color: var(--text-faint);
+}
+
+.edit-status-card{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px;
+  background:#fff;
+}
+.edit-status-card h3{
+  font-size:14.5px;
+  font-weight:800;
+  color: var(--navy);
+  margin:0 0 12px;
+}
+.edit-status-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  background: var(--bg);
+  border-radius:10px;
+  padding:12px 14px;
+}
+.edit-status-title{
+  font-size:13.5px;
+  font-weight:700;
+  color: var(--text-dark);
+  margin:0;
+}
+.edit-status-sub{
+  font-size:11.5px;
+  color: var(--text-faint);
+  margin:2px 0 0;
+}
+.edit-status-icons{
+  display:flex;
+  align-items:center;
+  color: #22C55E;
+}
+.edit-status-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.edit-status-dot{
+  width:14px; height:14px;
+  border-radius:50%;
+  background:#22C55E;
+  flex-shrink:0;
+}
+.edit-status-note{
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  margin-top:12px;
+  font-size:11.5px;
+  line-height:1.7;
+  color: var(--text-muted);
+}
+.edit-status-note p{
+  margin:0;
+  text-wrap: pretty;
+}
+.edit-status-note svg{ margin-top:2px; flex-shrink:0; }
+
+.edit-actions{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.edit-saved-banner{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#fff;
+  border-right:4px solid #22C55E;
+  border-radius:10px;
+  padding:12px 14px;
+  box-shadow: 0 1px 3px rgba(16,24,40,0.06);
+  color: var(--text-dark);
+  font-size:13px;
+  font-weight:700;
+}
+
+/* --- Form --- */
+.edit-form{
+  display:flex;
+  flex-direction:column;
+  gap:30px;
+  direction: rtl;
+}
+.edit-form section h2{
+  font-size:15.5px;
+  font-weight:800;
+  color: var(--navy);
+  margin:0 0 16px;
+}
+.edit-form-grid{
+  display:grid;
+  gap:16px;
+}
+.edit-form-grid.cols-2{ grid-template-columns: repeat(2, 1fr); }
+.edit-form-grid.cols-3{ grid-template-columns: repeat(3, 1fr); }
+
+.edit-field label{
+  display:block;
+  font-size:13px;
+  color: var(--text-muted);
+  margin-bottom:7px;
+}
+.edit-field input[type="text"],
+.edit-field input[type="number"],
+.edit-field select,
+.edit-form textarea{
+  width:100%;
+  padding: 12px 14px;
+  border-radius:10px;
+  border:1.5px solid var(--border);
+  background:#fff;
+  font-size:14px;
+  font-family: inherit;
+  color: var(--text-dark);
+  outline:none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.edit-field input:focus,
+.edit-field select:focus,
+.edit-form textarea:focus{
+  border-color: var(--blue-accent);
+  box-shadow: 0 0 0 3px rgba(47,111,237,0.12);
+}
+.edit-form textarea{
+  width:100%;
+  resize: vertical;
+  line-height:1.8;
+}
+
+.edit-counter{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  padding:8px 12px;
+  background:#fff;
+}
+.edit-counter span{
+  font-weight:700;
+  color: var(--text-dark);
+}
+.edit-counter button{
+  width:26px; height:26px;
+  border-radius:7px;
+  border:1px solid var(--border);
+  background:#fff;
+  color: var(--text-muted);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.edit-counter button:hover{ background: var(--bg); }
+
+.edit-features-grid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 40px;
+}
+.edit-checkbox{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  font-size:14px;
+  color: var(--text-dark);
+  cursor:pointer;
+}
+.edit-checkbox input{
+  width:17px; height:17px;
+  accent-color: var(--navy);
+  cursor:pointer;
+}
+
+@media (max-width: 900px){
+  .edit-grid{ grid-template-columns: 1fr; }
+}
+@media (max-width: 560px){
+  .edit-form-grid.cols-2,
+  .edit-form-grid.cols-3{ grid-template-columns: 1fr; }
+  .edit-features-grid{ grid-template-columns: 1fr; }
+}
