@@ -1,0 +1,187 @@
+/* ============================================================
+   PropertySearchBar — شريط بحث العقارات (قابل لإعادة الاستخدام)
+   ============================================================ */
+.psb-container {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(16, 40, 80, 0.08);
+  padding: 18px 22px;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* ---- الحقل الواحد ---- */
+.psb-field {
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  text-align: right;
+}
+
+.psb-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 7px;
+  padding-right: 2px;
+  white-space: nowrap;
+}
+
+.psb-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.psb-trigger:hover {
+  border-color: #cbd5e1;
+}
+
+.psb-trigger.open {
+  border-color: #0B2E4C;
+  box-shadow: 0 0 0 3px rgba(11, 46, 76, 0.1);
+}
+
+.psb-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.psb-value.placeholder {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.psb-chevron {
+  flex-shrink: 0;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.psb-trigger.open .psb-chevron {
+  transform: rotate(180deg);
+}
+
+/* ---- القائمة المنسدلة ---- */
+.psb-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(16, 40, 80, 0.14);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.psb-menu li {
+  margin: 0;
+  padding: 0;
+}
+
+.psb-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  text-align: right;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.psb-option:hover {
+  background: #f3f6fb;
+  color: #0B2E4C;
+}
+
+.psb-option.selected {
+  background: #eef4fb;
+  color: #0B2E4C;
+  font-weight: 700;
+}
+
+.psb-check {
+  flex-shrink: 0;
+  color: #0B2E4C;
+}
+
+/* ---- زر البحث ---- */
+.psb-search-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #0F1B3D;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 34px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.psb-search-btn:hover {
+  background: #101d4b;
+}
+
+.psb-search-btn:active {
+  transform: scale(0.98);
+}
+
+/* ---- استجابة الموبايل: عمود واحد ---- */
+@media (max-width: 768px) {
+  .psb-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 18px 16px;
+  }
+
+  .psb-field + .psb-field {
+    margin-top: 14px;
+  }
+
+  .psb-search-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 12px;
+  }
+}

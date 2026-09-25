@@ -1,0 +1,147 @@
+.pv-stepper {
+    margin-bottom: 26px;
+}
+
+.pv-empty {
+    background: #fff;
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    padding: 50px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.pv-modal {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(22, 36, 63, 0.18);
+    width: 100%;
+    max-width: 384px;
+    padding: 32px 28px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pv-modal h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #16243F;
+}
+
+.pv-modal p {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.8;
+    color: #8891A3;
+}
+
+.pv-spinner {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #CFE0FB;
+    color: #2F6FED;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    animation: pv-spin 1s linear infinite;
+}
+
+.pv-check {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #E7F8EF;
+    color: #22C55E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.pv-error {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #FDECEC;
+    color: #DC2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.pv-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 22px;
+}
+
+.pv-modal-actions .submit-btn {
+    width: 100%;
+}
+
+.pv-secondary {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1.5px solid #CBD2D9;
+    background: transparent;
+    color: #16243F;
+    font-size: 14.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.pv-secondary:hover {
+    background: #FAFBFC;
+    border-color: #8891A3;
+}
+
+.pv-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 50%;
+    transform: translateX(50%);
+    background: #16243F;
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 13px 20px;
+    box-shadow: 0 12px 30px rgba(22, 36, 63, 0.3);
+    z-index: 70;
+}
+
+@keyframes pv-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================
+   RESPONSIVE للجوال (أزرار النشر/الحفظ أسفل الشاشة ثابتة)
+   ============================================================ */
+@media (max-width: 560px) {
+    .pv-modal {
+        max-width: 100%;
+        padding: 26px 20px;
+    }
+
+    .pv-toast {
+        bottom: 90px;
+    }
+}

@@ -1,0 +1,852 @@
+/* ============================================================ */
+/*  Property Details Page (تفاصيل العقار)                          */
+/* ============================================================ */
+.pdp-page {
+    --pdp-navy: #0b1e36;
+    --pdp-navy-2: #152a4a;
+    --pdp-accent: #2f6fed;
+    --pdp-green: #16a34a;
+    --pdp-whatsapp: #22c55e;
+    --pdp-bg: #f4f6fa;
+    --pdp-card: #ffffff;
+    --pdp-border: #e7e9ee;
+    --pdp-text: #16243f;
+    --pdp-muted: #7a8495;
+    --pdp-radius: 16px;
+    direction: rtl;
+    background: var(--pdp-bg);
+    min-height: 100vh;
+    --pdp-shadow: 0 8px 30px rgba(11, 30, 54, 0.07);
+}
+
+/* ---------------------------------------------------------- */
+/*  المحتوى                                                    */
+/* ---------------------------------------------------------- */
+.pdp-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+
+/* ---------------------------------------------------------- */
+/*  معرض الصور                                                 */
+/* ---------------------------------------------------------- */
+.pdp-gallery {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+        "main a b"
+        "main c d";
+    gap: 10px;
+    height: 430px;
+    direction: rtl;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.pdp-gallery__item {
+    position: relative;
+    border: none;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #e8ecf3;
+    cursor: pointer;
+}
+
+.g-main {
+    grid-area: main;
+}
+
+.g-a {
+    grid-area: a;
+}
+
+.g-b {
+    grid-area: b;
+}
+
+.g-c {
+    grid-area: c;
+}
+
+.g-d {
+    grid-area: d;
+}
+
+.pdp-gallery__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+}
+
+.pdp-gallery__item:hover img {
+    transform: scale(1.04);
+}
+
+.pdp-gallery__more {
+    position: absolute;
+    inset: 0;
+    background: rgba(11, 30, 54, 0.55);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: background 0.15s ease;
+}
+
+.pdp-gallery__more:hover {
+    background: rgba(11, 30, 54, 0.65);
+}
+
+/* ---------------------------------------------------------- */
+/*  التخطيط العام (الفورم يساراً والتفاصيل يميناً)                */
+/* ---------------------------------------------------------- */
+.pdp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    align-items: start;
+}
+
+.pdp-details-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+}
+
+.pdp-side-card {
+    position: sticky;
+    top: 20px;
+    background: var(--pdp-card);
+    border-radius: 18px;
+    box-shadow: var(--pdp-shadow);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.pdp-divider {
+    border: none;
+    border-top: 1px solid var(--pdp-border);
+    margin: 18px 0 0;
+}
+
+/* ---------------------------------------------------------- */
+/*  البطاقات                                                    */
+/* ---------------------------------------------------------- */
+.pdp-card {
+    background: var(--pdp-card);
+    border-radius: 18px;
+    box-shadow: var(--pdp-shadow);
+    padding: 26px;
+}
+
+.pdp-block {
+    margin-top: 24px;
+}
+
+.pdp-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pdp-navy);
+    margin: 0 0 16px;
+}
+
+.pdp-section-title::before {
+    content: "";
+    width: 5px;
+    height: 21px;
+    border-radius: 3px;
+    background: var(--pdp-accent);
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------- */
+/*  بطاقة المعلومات                                             */
+/* ---------------------------------------------------------- */
+.pdp-badges {
+    display: flex;
+    gap: 8px;
+}
+
+.pdp-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 999px;
+}
+
+.pdp-badge--status {
+    background: var(--pdp-green);
+    color: #fff;
+}
+
+.pdp-badge--type {
+    background: #eff3fa;
+    color: var(--pdp-muted);
+}
+
+.pdp-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin: 14px 0 4px;
+}
+
+.pdp-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--pdp-navy);
+    margin: 0;
+}
+
+.pdp-price {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin: 0;
+    color: var(--pdp-navy);
+}
+
+.pdp-price__icon {
+    color: var(--pdp-accent);
+    display: flex;
+}
+
+.pdp-price__value {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.pdp-price__currency {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pdp-accent);
+}
+
+.pdp-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    color: var(--pdp-muted);
+    margin: 0;
+}
+
+.pdp-location svg {
+    flex-shrink: 0;
+    color: #8892a3;
+}
+
+.pdp-owner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: #f7f9fc;
+    border-radius: 14px;
+}
+
+.pdp-owner__avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.pdp-owner__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pdp-owner__name {
+    font-weight: 700;
+    color: var(--pdp-navy);
+    font-size: 14.5px;
+}
+
+.pdp-owner__role {
+    font-size: 12px;
+    color: var(--pdp-muted);
+}
+
+/* الحالة والإحصائيات */
+.pdp-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.pdp-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #f7f9fc;
+    border: 1px solid var(--pdp-border);
+    border-radius: 14px;
+    padding: 13px 14px;
+}
+
+.pdp-stat__icon {
+    color: var(--pdp-accent);
+    display: flex;
+}
+
+.pdp-stat__value {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--pdp-navy);
+}
+
+.pdp-stat__label {
+    font-size: 12px;
+    color: var(--pdp-muted);
+}
+
+/* الأزرار */
+.pdp-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.pdp-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.pdp-btn:hover {
+    transform: translateY(-1px);
+}
+
+.pdp-btn:active {
+    transform: translateY(0);
+}
+
+.pdp-btn--primary {
+    background: var(--pdp-navy);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(11, 30, 54, 0.22);
+}
+
+.pdp-btn--primary:hover {
+    background: var(--pdp-navy-2);
+}
+
+.pdp-btn--outline {
+    background: #fff;
+    border: 1.5px solid var(--pdp-border);
+    color: var(--pdp-navy);
+}
+
+.pdp-btn--outline:hover {
+    border-color: #22c55e;
+    color: #1a9e49;
+}
+
+.pdp-btn--whatsapp {
+    background: var(--pdp-whatsapp);
+    color: #fff;
+}
+
+.pdp-btn--whatsapp:hover {
+    background: #1fb354;
+}
+
+/* ---------------------------------------------------------- */
+/*  الوصف                                                      */
+/* ---------------------------------------------------------- */
+.pdp-desc {
+    font-size: 14px;
+    line-height: 1.95;
+    color: var(--pdp-muted);
+    margin: 0;
+}
+
+.pdp-read-more {
+    background: none;
+    border: none;
+    padding: 0 4px;
+    color: var(--pdp-accent);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.pdp-read-more:hover {
+    text-decoration: underline;
+}
+
+/* ---------------------------------------------------------- */
+/*  وسائل الراحة                                               */
+/* ---------------------------------------------------------- */
+.pdp-amenities {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.pdp-amenity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f7f9fc;
+    border: 1px solid var(--pdp-border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--pdp-text);
+}
+
+.pdp-amenity__icon {
+    color: var(--pdp-accent);
+    display: flex;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------- */
+/*  اقتراحات مشابهة                                             */
+/* ---------------------------------------------------------- */
+.pdp-similar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.pdp-sim {
+    background: var(--pdp-card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--pdp-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pdp-sim:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 34px rgba(11, 30, 54, 0.12);
+}
+
+.pdp-sim__img-wrap {
+    position: relative;
+    height: 170px;
+    overflow: hidden;
+}
+
+.pdp-sim__img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pdp-sim__badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--pdp-green);
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+.pdp-sim__body {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 14px 16px 16px;
+    flex: 1;
+}
+
+.pdp-sim__price {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--pdp-navy);
+}
+
+.pdp-sim__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--pdp-text);
+    margin: 0;
+}
+
+.pdp-sim__loc {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--pdp-muted);
+    margin: 0;
+}
+
+.pdp-sim__loc svg {
+    flex-shrink: 0;
+}
+
+.pdp-sim__stats {
+    display: flex;
+    gap: 14px;
+    font-size: 12.5px;
+    color: var(--pdp-muted);
+    margin-top: 2px;
+}
+
+.pdp-sim__stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pdp-sim__stat svg {
+    color: var(--pdp-accent);
+    flex-shrink: 0;
+}
+
+.pdp-sim__btn {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    background: var(--pdp-navy);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pdp-sim__btn:hover {
+    background: var(--pdp-navy-2);
+}
+
+/* ---------------------------------------------------------- */
+/*  Lightbox                                                   */
+/* ---------------------------------------------------------- */
+.pdp-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdp-lightbox__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 24, 0.85);
+}
+
+.pdp-lightbox__content {
+    position: relative;
+    z-index: 1;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdp-lightbox__content img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 12px;
+    object-fit: contain;
+}
+
+.pdp-lightbox__close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pdp-lightbox__close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.pdp-lightbox__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pdp-lightbox__nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.pdp-lightbox__nav--prev {
+    left: 16px;
+}
+
+.pdp-lightbox__nav--next {
+    right: 16px;
+}
+
+.pdp-lightbox__counter {
+    position: absolute;
+    bottom: -36px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.14);
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+/* ---------------------------------------------------------- */
+/*  Dialog تسجيل الدخول                                        */
+/* ---------------------------------------------------------- */
+.pdp-login-prompt {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.pdp-login-prompt__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(11, 30, 54, 0.55);
+}
+
+.pdp-login-prompt__box {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 34px 28px 28px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(11, 30, 54, 0.25);
+}
+
+.pdp-login-prompt__close {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: var(--pdp-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.pdp-login-prompt__badge {
+    background: var(--pdp-accent);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.pdp-login-prompt__badge-inner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--pdp-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdp-login-prompt__title {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--pdp-navy);
+    margin: 0 0 8px;
+}
+
+.pdp-login-prompt__subtitle {
+    font-size: 13.5px;
+    color: var(--pdp-muted);
+    line-height: 1.7;
+    margin: 0 0 20px;
+}
+
+.pdp-login-prompt__btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.pdp-login-prompt__btn--primary {
+    background: var(--pdp-navy);
+    color: #fff;
+    border: none;
+}
+
+.pdp-login-prompt__btn--primary:hover {
+    background: var(--pdp-navy-2);
+}
+
+.pdp-login-prompt__btn--outline {
+    background: #fff;
+    color: var(--pdp-navy);
+    border: 1.5px solid var(--pdp-border);
+}
+
+.pdp-login-prompt__btn--outline:hover {
+    background: #f7f9fc;
+}
+
+/* ---------------------------------------------------------- */
+/*  Responsive                                                 */
+/* ---------------------------------------------------------- */
+@media (max-width: 920px) {
+    .pdp-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .pdp-side-card {
+        position: static;
+        order: -1;
+    }
+
+    .pdp-gallery {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 230px 130px 130px;
+        grid-template-areas:
+            "main main"
+            "a b"
+            "c d";
+        height: auto;
+    }
+
+    .pdp-similar {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 620px) {
+    .pdp-inner {
+        padding: 16px 12px 48px;
+    }
+
+    .pdp-header {
+        padding: 10px 14px;
+    }
+
+    .pdp-gallery {
+        grid-template-rows: 210px 110px 110px;
+    }
+
+    .pdp-card {
+        padding: 20px 16px;
+    }
+
+    .pdp-title {
+        font-size: 22px;
+    }
+
+    .pdp-price__value {
+        font-size: 21px;
+    }
+
+    .pdp-similar {
+        grid-template-columns: 1fr;
+    }
+
+    .pdp-amenities {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .pdp-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+    }
+}

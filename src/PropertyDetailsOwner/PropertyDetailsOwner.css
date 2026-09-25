@@ -1,0 +1,1053 @@
+/* ============================================================
+   Bayti — تفاصيل العقار للمالك
+   CSS بيور بدون أي مكتبة خارجية (Tailwind غير مستخدم هنا)
+   ============================================================ */
+
+:root {
+    --pdo-navy: #0f1b3d;
+    --pdo-navy-light: #16234f;
+    --pdo-text: #16192b;
+    --pdo-text-muted: #6b7280;
+    --pdo-border: #e6e8ee;
+    --pdo-bg: #f7f8fa;
+    --pdo-white: #ffffff;
+    --pdo-green-bg: #e7f8ee;
+    --pdo-green-text: #16a34a;
+    --pdo-whatsapp: #25d366;
+    --pdo-gray-bg: #f1f2f5;
+    --pdo-red: #dc2626;
+    --pdo-radius-lg: 18px;
+    --pdo-radius-md: 12px;
+    --pdo-radius-sm: 8px;
+    --pdo-shadow: 0 2px 10px rgba(16, 24, 40, 0.06);
+    --pdo-font: "Tajawal", "Cairo", "Segoe UI", Tahoma, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.pdo-page {
+    font-family: var(--pdo-font);
+    color: var(--pdo-text);
+    background: var(--pdo-bg);
+    min-height: 100vh;
+    direction: rtl;
+    width: 100%;
+    flex: 1;
+}
+
+.pdo-page a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ---------------------------------------------------------- */
+/* Navbar                                                      */
+/* ---------------------------------------------------------- */
+.pdo-navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    background: var(--pdo-white);
+    box-shadow: var(--pdo-shadow);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.pdo-navbar__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.pdo-navbar__logo-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pdo-navy);
+    border-radius: 8px;
+}
+
+.pdo-navbar__links {
+    display: flex;
+    gap: 32px;
+}
+
+.pdo-navbar__link {
+    font-size: 15px;
+    color: var(--pdo-text-muted);
+    font-weight: 500;
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.pdo-navbar__link:hover {
+    color: var(--pdo-navy);
+}
+
+.pdo-navbar__link--active {
+    color: var(--pdo-navy);
+    font-weight: 700;
+    border-bottom-color: var(--pdo-navy);
+}
+
+.pdo-navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pdo-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--pdo-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 50%;
+    transition: background 0.15s ease;
+}
+
+.pdo-icon-btn:hover {
+    background: var(--pdo-gray-bg);
+}
+
+.pdo-navbar__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* ---------------------------------------------------------- */
+/* Main container — عرض الشاشة كاملاً مع بادنج بسيط            */
+/* ---------------------------------------------------------- */
+.pdo-main {
+    width: 100%;
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    padding: 24px 32px 48px;
+}
+
+.pdo-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+}
+
+.pdo-back {
+    flex-shrink: 0;
+}
+
+.pdo-error {
+    padding: 24px;
+    text-align: center;
+    color: #E5484D;
+    font-weight: 600;
+    background: #fff5f5;
+    border: 1px dashed #e7c3c3;
+    border-radius: 12px;
+}
+
+.pdo-page-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0;
+}
+
+/* ---------------------------------------------------------- */
+/* Buttons                                                      */
+/* ---------------------------------------------------------- */
+.pdo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    border-radius: var(--pdo-radius-sm);
+    padding: 12px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.pdo-btn:hover {
+    opacity: 0.9;
+}
+
+.pdo-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.pdo-btn--outline {
+    background: var(--pdo-white);
+    color: var(--pdo-navy);
+    border-color: var(--pdo-navy);
+}
+
+.pdo-btn--block {
+    width: 100%;
+}
+
+.pdo-btn--primary {
+    background: var(--pdo-navy);
+    color: var(--pdo-white);
+    width: 100%;
+}
+
+.pdo-btn--whatsapp {
+    background: var(--pdo-whatsapp);
+    color: var(--pdo-white);
+    width: 100%;
+}
+
+.pdo-btn--disabled,
+.pdo-btn--disabled:disabled {
+    background: #b9c2ce;
+    color: var(--pdo-white);
+    width: 100%;
+    opacity: 1;
+}
+
+.pdo-btn--disabled:hover {
+    opacity: 1;
+}
+
+.pdo-btn--danger {
+    background: var(--pdo-white);
+    color: var(--pdo-red);
+    border-color: var(--pdo-red);
+    width: 100%;
+}
+
+.pdo-btn--ghost {
+    background: var(--pdo-gray-bg);
+    color: var(--pdo-text);
+}
+
+/* ---------------------------------------------------------- */
+/* Gallery                                                      */
+/* ---------------------------------------------------------- */
+.pdo-gallery {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    height: 420px;
+    margin-bottom: 28px;
+}
+
+.pdo-gallery__col {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    height: 100%;
+    grid-row: span 2;
+    min-height: 0;
+}
+
+/* الصفحة RTL: العمود الأخير في الـ DOM يظهر أقصى اليسار */
+.pdo-gallery__col--last {
+    grid-column: 3;
+}
+
+.pdo-gallery__thumb,
+.pdo-gallery__main {
+    position: relative;
+    border: none;
+    padding: 0;
+    border-radius: var(--pdo-radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--pdo-gray-bg);
+    height: 100%;
+    width: 100%;
+    min-height: 0;
+}
+
+.pdo-gallery__main {
+    grid-row: span 2;
+}
+
+.pdo-gallery__thumb img,
+.pdo-gallery__main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.pdo-gallery__thumb:hover img,
+.pdo-gallery__main:hover img {
+    transform: scale(1.04);
+}
+
+.pdo-gallery__thumb--overlay .pdo-gallery__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 27, 61, 0.45);
+    color: var(--pdo-white);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* شارة "عرض المزيد" في أقصى يسار الصورة */
+.pdo-gallery__overlay-label {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(15, 27, 61, 0.75);
+}
+
+/* ---------------------------------------------------------- */
+/* Details section                                              */
+/* ---------------------------------------------------------- */
+.pdo-details {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+    align-items: start;
+}
+
+.pdo-details__main {
+    background: var(--pdo-white);
+    border-radius: var(--pdo-radius-lg);
+    padding: 36px;
+    box-shadow: var(--pdo-shadow);
+    margin-top: 30px;
+    min-width: 0;
+}
+
+.pdo-badges {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+    margin-bottom: 14px;
+}
+
+.pdo-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 999px;
+}
+
+.pdo-badge--status {
+    background: var(--pdo-green-bg);
+    color: var(--pdo-green-text);
+}
+
+.pdo-badge--type {
+    background: var(--pdo-gray-bg);
+    color: var(--pdo-text-muted);
+}
+
+.pdo-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.pdo-title {
+    font-size: 28px;
+    font-weight: 800;
+    text-align: right;
+    margin: 0;
+}
+
+.pdo-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-start;
+    color: var(--pdo-text-muted);
+    font-size: 14px;
+    margin-bottom: 18px;
+}
+
+.pdo-price {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--pdo-navy);
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.pdo-price__currency {
+    font-size: 20px;
+}
+
+.pdo-divider {
+    border: none;
+    border-top: 1px solid var(--pdo-border);
+    margin: 22px 0;
+}
+
+.pdo-divider--tight {
+    margin: 4px 0;
+}
+
+.pdo-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    text-align: center;
+    margin-bottom: 28px;
+    border-top: 1px solid #e8eaee;
+    border-bottom: 1px solid #e8eaee;
+}
+
+.pdo-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 8px;
+    border-left: 1px solid #e8eaee;
+}
+
+.pdo-stat:last-child {
+    border-left: none;
+}
+
+.pdo-stat__label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--pdo-text-muted);
+}
+
+.pdo-stat__value-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--pdo-navy);
+}
+
+.pdo-stat__value {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--pdo-navy);
+}
+
+.pdo-section-title {
+    font-size: 19px;
+    font-weight: 800;
+    text-align: right;
+    color: var(--pdo-navy);
+    margin: 0 0 14px;
+}
+
+.pdo-description {
+    text-align: right;
+    line-height: 1.9;
+    color: #374151;
+    font-size: 15px;
+    margin: 0 0 28px;
+}
+
+.pdo-read-more {
+    background: none;
+    border: none;
+    color: var(--pdo-navy);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    font-size: 15px;
+}
+
+.pdo-amenities {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 12px;
+    width: 100%;
+}
+
+.pdo-amenities-empty {
+    text-align: right;
+    color: var(--pdo-text-muted);
+    font-size: 14px;
+    margin: 0;
+    padding: 12px 0;
+}
+
+.pdo-amenity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+    font-size: 14px;
+    font-weight: 600;
+    color: #40506e;
+}
+
+.pdo-amenity__icon {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+    background: #eaf0fb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pdo-navy);
+}
+
+/* ---------------------------------------------------------- */
+/* Contact card (owner card)                                    */
+/* ---------------------------------------------------------- */
+.pdo-owner-card {
+    background: var(--pdo-white);
+    border-radius: var(--pdo-radius-lg);
+    padding: 24px;
+    box-shadow: var(--pdo-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 30px;
+}
+
+.pdo-owner-card__profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-start;
+    margin-bottom: 8px;
+}
+
+.pdo-owner-card__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.pdo-owner-card__name {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.pdo-contact-error {
+    margin: -4px 0 0;
+    font-size: 13px;
+    color: var(--pdo-red);
+    text-align: center;
+}
+
+/* حالة: تم إرسال الطلب */
+.pdo-contact-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.pdo-contact-success__badge {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--pdo-gray-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.pdo-contact-success__badge-inner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: var(--pdo-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-contact-success__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--pdo-text);
+}
+
+.pdo-contact-success__text {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--pdo-text-muted);
+    line-height: 1.7;
+}
+
+.pdo-contact-locked {
+    background: var(--pdo-gray-bg);
+    border-radius: var(--pdo-radius-md);
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pdo-text);
+}
+
+/* حالة: تمت الموافقة */
+.pdo-contact-approved {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--pdo-radius-md);
+    background: var(--pdo-green-bg);
+    border: 1px solid #c9ecd6;
+}
+
+.pdo-contact-approved__icon {
+    color: var(--pdo-green-text);
+    display: flex;
+    margin-top: 2px;
+}
+
+.pdo-contact-approved strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--pdo-green-text);
+    margin-bottom: 2px;
+}
+
+.pdo-contact-approved p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #4b5563;
+}
+
+.pdo-contact-phone {
+    background: var(--pdo-gray-bg);
+    border-radius: var(--pdo-radius-md);
+    padding: 14px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.pdo-contact-phone__label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--pdo-text-muted);
+}
+
+.pdo-contact-phone__number {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--pdo-text);
+    unicode-bidi: plaintext;
+}
+
+/* ---------------------------------------------------------- */
+/* Lightbox                                                      */
+/* ---------------------------------------------------------- */
+.pdo-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-lightbox__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 24, 0.85);
+}
+
+.pdo-lightbox__content {
+    position: relative;
+    z-index: 1;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-lightbox__content img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: var(--pdo-radius-md);
+    object-fit: contain;
+}
+
+.pdo-lightbox__close {
+    position: absolute;
+    top: -48px;
+    left: 0;
+    background: none;
+    border: none;
+    color: var(--pdo-white);
+    cursor: pointer;
+}
+
+.pdo-lightbox__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: var(--pdo-white);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-lightbox__nav--prev {
+    right: -60px;
+}
+
+.pdo-lightbox__nav--next {
+    left: -60px;
+}
+
+.pdo-lightbox__counter {
+    position: absolute;
+    bottom: -36px;
+    color: var(--pdo-white);
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+/* ---------------------------------------------------------- */
+/* Login prompt dialog                                          */
+/* ---------------------------------------------------------- */
+.pdo-login-prompt {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-login-prompt__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 24, 0.5);
+}
+
+.pdo-login-prompt__box {
+    position: relative;
+    z-index: 1;
+    background: var(--pdo-white);
+    border-radius: 16px;
+    padding: 32px 28px 24px;
+    width: 360px;
+    max-width: 90vw;
+    text-align: center;
+    border: 1px solid var(--pdo-border);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.pdo-login-prompt__close {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: none;
+    border: none;
+    color: #4b5563;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.15s ease;
+}
+
+.pdo-login-prompt__close:hover {
+    background: var(--pdo-gray-bg);
+}
+
+.pdo-login-prompt__badge {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #eaf0fb;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-login-prompt__badge-inner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--pdo-navy);
+    color: var(--pdo-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-login-prompt__title {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--pdo-navy);
+}
+
+.pdo-login-prompt__subtitle {
+    margin: 0 auto 22px;
+    max-width: 280px;
+    color: var(--pdo-text-muted);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.pdo-login-prompt__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    border-radius: var(--pdo-radius-sm);
+    padding: 12px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.pdo-login-prompt__btn:hover {
+    opacity: 0.9;
+}
+
+.pdo-login-prompt__btn--primary {
+    background: var(--pdo-navy);
+    color: var(--pdo-white);
+    border: 1px solid transparent;
+    margin-bottom: 10px;
+}
+
+.pdo-login-prompt__btn--outline {
+    background: var(--pdo-white);
+    color: var(--pdo-navy);
+    border: 1px solid var(--pdo-navy);
+}
+
+/* ---------------------------------------------------------- */
+/* Footer                                                        */
+/* ---------------------------------------------------------- */
+.pdo-footer {
+    background: var(--pdo-navy);
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 48px;
+    padding: 48px 40px 0;
+}
+
+.pdo-footer__grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1.4fr;
+    gap: 32px;
+    padding-bottom: 40px;
+    text-align: right;
+}
+
+.pdo-footer__col h4 {
+    color: var(--pdo-white);
+    font-size: 16px;
+    margin: 0 0 16px;
+}
+
+.pdo-footer__col h5 {
+    color: var(--pdo-white);
+    font-size: 14px;
+    margin: 20px 0 12px;
+}
+
+.pdo-footer__col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.pdo-footer__contact li {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.pdo-footer__social {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.pdo-footer__social a {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.pdo-footer__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    color: var(--pdo-white);
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.pdo-footer__col--brand p {
+    font-size: 13px;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.pdo-footer__bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    text-align: center;
+    padding: 18px 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---------------------------------------------------------- */
+/* Responsive                                                    */
+/* ---------------------------------------------------------- */
+@media (max-width: 1100px) {
+    .pdo-details {
+        grid-template-columns: 1fr 340px;
+    }
+}
+
+@media (max-width: 900px) {
+    .pdo-navbar__links {
+        display: none;
+    }
+
+    .pdo-gallery {
+        grid-template-columns: 1fr 1fr;
+        height: auto;
+        grid-auto-rows: 140px;
+    }
+
+    .pdo-gallery__main {
+        grid-column: span 2;
+        grid-row: span 1;
+        height: 220px;
+    }
+
+    .pdo-gallery__col,
+    .pdo-gallery__col--last {
+        grid-column: auto;
+        grid-row: span 1;
+        height: 140px;
+    }
+
+    .pdo-details {
+        grid-template-columns: 1fr;
+        gap: 0;
+        width: 100%;
+    }
+
+    .pdo-owner-card {
+        position: static;
+    }
+
+    .pdo-stats,
+    .pdo-amenities {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .pdo-footer__grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .pdo-navbar {
+        padding: 14px 16px;
+    }
+
+    .pdo-main {
+        padding: 20px 12px 40px;
+    }
+
+    .pdo-page-header h1 {
+        font-size: 24px;
+    }
+
+    .pdo-details__main {
+        padding: 20px;
+    }
+
+    .pdo-stats,
+    .pdo-amenities {
+        grid-template-columns: 1fr;
+    }
+
+    .pdo-footer__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.main:has(> .pdo-page) {
+    max-width: none;
+    width: 100%;
+    padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+    }
+}

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { FaBell, FaUserCircle, FaUser, FaKey, FaSignOutAlt } from "react-icons/fa";
+import logoImg from "./logo.png";
 
-export default function Navbar({ onProfileClick, onChangePasswordClick, onLogoutClick, onHomeClick }) {
+export default function Navbar({ onProfileClick, onChangePasswordClick, onLogoutClick, onHomeClick, onSearchClick, onSavedClick }) {
   const [showNotif, setShowNotif] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -16,7 +17,7 @@ export default function Navbar({ onProfileClick, onChangePasswordClick, onLogout
           onHomeClick?.();
         }}
       >
-        <img src="/logo.png" alt="بيتي Bayti" className="logo-img" />
+        <img src={logoImg} alt="بيتي Bayti" className="logo-img" />
       </a>
 
       {/* 2. الروابط في المنتصف */}
@@ -34,9 +35,29 @@ export default function Navbar({ onProfileClick, onChangePasswordClick, onLogout
               الرئيسية
             </a>
           </li>
-          <li><a href="#">البحث</a></li>
+          <li>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onSearchClick?.();
+              }}
+            >
+              البحث
+            </a>
+          </li>
           <li><a href="#">طلباتي</a></li>
-          <li><a href="#">المحفوظات</a></li>
+          <li>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onSavedClick?.();
+              }}
+            >
+              المحفوظات
+            </a>
+          </li>
         </ul>
       </nav>
 

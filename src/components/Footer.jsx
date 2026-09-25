@@ -8,6 +8,7 @@ import {
   FaInstagram,
   FaLinkedinIn,
 } from "react-icons/fa";
+import logoImg from "./logo.png";
 
 export default function Footer() {
   return (
@@ -16,7 +17,7 @@ export default function Footer() {
         <div className="footer-brand">
           <Link to="/home" className="logo">
             <img
-              src="/logo.png"
+              src={logoImg}
               alt="بيتي Bayti"
               className="logo-img logo-img-footer"
             />

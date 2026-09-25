@@ -1,0 +1,644 @@
+/* ============================================================
+   صفحة البحث — التنسيقات الكاملة
+   ============================================================ */
+
+/* ─── Hero Section ─── */
+.props-hero {
+  position: relative;
+  background: linear-gradient(rgba(10, 37, 64, 0.82), rgba(10, 37, 64, 0.85)),
+    url('../components/home.png') center/cover no-repeat;
+  padding: 64px 20px 70px;
+  min-height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.props-hero-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+.props-hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1000px;
+  text-align: center;
+}
+
+.props-hero-content h1 {
+  font-size: clamp(26px, 4vw, 42px);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.props-hero-content p {
+  font-size: clamp(14px, 2vw, 17px);
+  color: #dbe4f0;
+  margin-bottom: 28px;
+  line-height: 1.8;
+}
+
+/* ─── صندوق البحث ─── */
+.props-search-box {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.props-search-field {
+  flex: 1 1 170px;
+  min-width: 0;
+  text-align: right;
+}
+
+.props-search-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a5568;
+  margin-bottom: 6px;
+  padding-right: 2px;
+}
+
+.props-search-field select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  outline: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #2d3748;
+  background: #f9fbfd;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.props-search-field select:hover,
+.props-search-field select:focus {
+  border-color: #0b78a8;
+}
+
+.props-search-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #0f2338;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 13px 34px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.props-search-btn:hover {
+  background: #0b78a8;
+}
+
+.props-search-btn:active {
+  transform: scale(0.98);
+}
+
+/* ─── المحتوى الرئيسي ─── */
+.props-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px 20px;
+  box-sizing: border-box;
+}
+
+/* ─── رأس النتائج ─── */
+.props-results-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.props-results-title h2 {
+  font-size: 21px;
+  color: #0f2338;
+  margin: 0 0 6px;
+}
+
+.props-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef4fb;
+  color: #0b78a8;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.props-results-title p {
+  font-size: 13px;
+  color: #718096;
+  margin: 8px 0 0;
+}
+
+.props-results-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.props-sort-label {
+  font-size: 13px;
+  color: #718096;
+}
+
+.props-results-controls select {
+  padding: 9px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #2d3748;
+  background: #ffffff;
+  outline: none;
+  cursor: pointer;
+}
+
+.props-view-btns {
+  display: flex;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.props-view-btns button {
+  background: #ffffff;
+  border: none;
+  padding: 9px 13px;
+  cursor: pointer;
+  color: #718096;
+  font-size: 14px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.props-view-btns button + button {
+  border-right: 1px solid #edf2f7;
+}
+
+.props-view-btns button:hover {
+  color: #0f2338;
+}
+
+.props-view-btns button.active {
+  background: #edf2f7;
+  color: #0f2338;
+}
+
+/* ─── التخطيط: سايدبار + نتائج ─── */
+.props-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ─── السايدبار (الفلاتر) ─── */
+.props-sidebar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  position: sticky;
+  top: 90px;
+}
+
+.props-sidebar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.props-sidebar-head h3 {
+  font-size: 16px;
+  color: #0f2338;
+  margin: 0;
+}
+
+.props-sidebar-head button {
+  background: none;
+  border: none;
+  color: #e53e3e;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.props-sidebar-head button:hover {
+  text-decoration: underline;
+}
+
+.props-filter-group {
+  margin-bottom: 18px;
+}
+
+.props-filter-group h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 10px;
+}
+
+.props-select,
+.props-input {
+  width: 100%;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #2d3748;
+  background: #f8fafc;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.props-select:focus,
+.props-input:focus {
+  outline: none;
+  border-color: #0b78a8;
+  background: #ffffff;
+}
+
+.props-input::placeholder {
+  color: #a0aec0;
+}
+
+.props-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: #4a5568;
+  margin-bottom: 9px;
+  cursor: pointer;
+}
+
+.props-check input {
+  display: none;
+}
+
+.fake-check {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e0;
+  border-radius: 5px;
+  flex-shrink: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.props-check input:checked + .fake-check {
+  background: #0b78a8;
+  border-color: #0b78a8;
+}
+
+.props-sidebar-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.props-apply-btn {
+  flex: 1;
+  background: #0f2338;
+  color: #ffffff;
+  border: none;
+  padding: 11px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.props-apply-btn:hover {
+  background: #0b78a8;
+}
+
+.props-reset-btn {
+  flex: 1;
+  background: #ffffff;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+  padding: 11px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.props-reset-btn:hover {
+  background: #f8fafc;
+}
+
+/* ─── شبكة النتائج ─── */
+.props-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.props-grid.list-view {
+  grid-template-columns: 1fr;
+}
+
+.props-map-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e0;
+  border-radius: 14px;
+  color: #718096;
+  text-align: center;
+  padding: 30px;
+}
+
+.props-map-placeholder svg {
+  color: #0b78a8;
+}
+
+.props-map-placeholder p {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.props-map-placeholder span {
+  font-size: 13px;
+}
+
+/* ─── بطاقة العقار ─── */
+.props-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.props-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(15, 35, 56, 0.09);
+  border-color: #cbd5e0;
+}
+
+.props-card-img {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+}
+
+.props-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.props-card:hover .props-card-img img {
+  transform: scale(1.05);
+}
+
+.props-card-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #0b78a8;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  z-index: 2;
+}
+
+.props-card-icon {
+  position: absolute;
+  top: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: none;
+  color: #4a5568;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.props-card-icon.share {
+  left: 56px;
+}
+
+.props-card-icon.saved {
+  left: 12px;
+}
+
+.props-card-icon.saved.active {
+  color: #0282AD;
+  background: rgba(228, 244, 248, 0.95);
+}
+
+.props-card-icon:hover {
+  background: #ffffff;
+  color: #e53e3e;
+  transform: scale(1.08);
+}
+
+.props-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.props-card-body h3 {
+  font-size: 16px;
+  color: #0f2338;
+  margin: 0 0 6px;
+  transition: color 0.2s ease;
+}
+
+.props-card:hover .props-card-body h3 {
+  color: #0b78a8;
+}
+
+.props-card-loc {
+  font-size: 13px;
+  color: #718096;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.6;
+}
+
+.props-card-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f2338;
+  margin: 0 0 12px;
+}
+
+.props-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  border-top: 1px solid #edf2f7;
+  padding-top: 12px;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  color: #718096;
+}
+
+.props-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.props-card-btn {
+  width: 100%;
+  margin-top: auto;
+  background: #0f2338;
+  color: #ffffff;
+  border: none;
+  padding: 11px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.props-card-btn:hover {
+  background: #0b78a8;
+}
+
+.props-card-btn:active {
+  transform: scale(0.99);
+}
+
+/* ─── أوصلة الترقيم ─── */
+.props-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 34px;
+}
+
+.props-pagination .props-page-num,
+.props-pagination .props-page-arrow {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid #cbd5e0;
+  background: #ffffff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: #4a5568;
+  transition: all 0.2s ease;
+}
+
+.props-pagination .props-page-num:hover,
+.props-pagination .props-page-arrow:hover:not(:disabled) {
+  border-color: #0b78a8;
+  color: #0b78a8;
+}
+
+.props-pagination .props-page-num.active {
+  background: #0f2338;
+  color: #ffffff;
+  border-color: #0f2338;
+}
+
+.props-pagination .props-page-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── استجابة الموبايل ─── */
+@media (max-width: 900px) {
+  .props-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .props-sidebar {
+    position: static;
+  }
+
+  .props-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .props-search-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .props-search-field {
+    flex: 1 1 auto;
+  }
+
+  .props-search-btn {
+    width: 100%;
+  }
+
+  .props-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .props-results-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

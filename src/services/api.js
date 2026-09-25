@@ -54,6 +54,27 @@ async function refreshTokens() {
   }
 }
 
+// إعادة محاولة عند فشل الشبكة مع مهلة زمنية لتفادي التعليق الطويل
+async function fetchWithRetry(path, { method, headers, body }, retries = 2) {
+  for (let attempt = 0; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    try {
+      const res = await fetch(path, { method, headers, body, signal: controller.signal });
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
 // طلب آمن: يجرب أولاً، وعند 401 يعيد تسجيل الدخول ويعيد المحاولة مرة واحدة
 export async function apiFetch(path, { method = 'GET', json, formData, headers: extraHeaders } = {}) {
   const headers = {
@@ -68,13 +89,13 @@ export async function apiFetch(path, { method = 'GET', json, formData, headers: 
     body = JSON.stringify(json);
   }
 
-  let res = await fetch(`${API_BASE}${path}`, { method, headers, body });
+  let res = await fetchWithRetry(`${API_BASE}${path}`, { method, headers, body });
 
   if (res.status === 401) {
     const ok = await refreshTokens();
     if (ok) {
       headers.Authorization = `Bearer ${localStorage.getItem('access_token')}`;
-      res = await fetch(`${API_BASE}${path}`, { method, headers, body });
+      res = await fetchWithRetry(`${API_BASE}${path}`, { method, headers, body });
     }
   }
 
@@ -135,3 +156,107 @@ export function roleToApi(value) {
 export function accountTypeToApi(value) {
   return value === 'مكتب عقاري' ? 'office' : 'individual';
 }
+
+// ─── البحث عن العقارات ───
+// params: search, governorate, area, neighborhood, property_type, bedrooms,
+//         min_price, max_price, electricity (array), water (array), page
+export function buildPropertySearchQuery({
+  search,
+  governorate,
+  area,
+  neighborhood,
+  property_type,
+  bedrooms,
+  min_price,
+  max_price,
+  electricity,
+  water,
+  page,
+} = {}) {
+  const q = new URLSearchParams();
+  if (search) q.append('search', search);
+  if (governorate) q.append('governorate', governorate);
+  if (area) q.append('area', area);
+  if (neighborhood) q.append('neighborhood', neighborhood);
+  if (property_type) q.append('property_type', property_type);
+  if (bedrooms) q.append('bedrooms', bedrooms);
+  if (min_price) q.append('min_price', min_price);
+  if (max_price) q.append('max_price', max_price);
+  if (Array.isArray(electricity) && electricity.length) q.append('electricity', electricity.join(','));
+  if (Array.isArray(water) && water.length) q.append('water', water.join(','));
+  if (page) q.append('page', page);
+  return q.toString();
+}
+
+export async function searchProperties(params = {}) {
+  const qs = buildPropertySearchQuery(params);
+  return apiFetch(`/api/properties/search/${qs ? `?${qs}` : ''}`);
+}
+
+// ─── قيم البحث القابلة للعرض ───
+export const GOVERNORATE_OPTIONS = [
+  { label: 'كل المناطق', value: '' },
+  { label: 'شمال غزة', value: 'north_gaza' },
+  { label: 'غزة', value: 'gaza' },
+  { label: 'وسط غزة', value: 'middle_gaza' },
+  { label: 'خانيونس', value: 'khan_younis' },
+  { label: 'رفح', value: 'rafah' },
+];
+
+export const GOVERNORATE_LABELS = Object.fromEntries(
+  GOVERNORATE_OPTIONS.filter((o) => o.value).map((o) => [o.value, o.label])
+);
+
+export const PROPERTY_TYPE_OPTIONS = [
+  { label: 'شقة', value: 'apartment' },
+  { label: 'فيلا', value: 'villa' },
+  { label: 'قطعة أرض', value: 'land' },
+  { label: 'حاصل', value: 'store_room' },
+  { label: 'بركس', value: 'barracks' },
+  { label: 'محل تجاري', value: 'shop' },
+];
+
+export const PROPERTY_TYPE_LABELS = Object.fromEntries(
+  PROPERTY_TYPE_OPTIONS.map((o) => [o.value, o.label])
+);
+
+export const AREA_OPTIONS = [
+  { label: 'بيت لاهيا', value: 'beit_lahia' },
+  { label: 'أم النصر', value: 'umm_al_nasr' },
+  { label: 'مخيم جباليا', value: 'jabalia_camp' },
+  { label: 'جباليا', value: 'jabalia' },
+  { label: 'بيت حانون', value: 'beit_hanoun' },
+  { label: 'غزة', value: 'gaza_city' },
+  { label: 'الشاطئ', value: 'shati_camp' },
+  { label: 'المغراقة', value: 'mughraqa' },
+  { label: 'جحر الديك', value: 'juhr_al_dik' },
+  { label: 'الزهراء', value: 'zahra' },
+  { label: 'مصدر', value: 'masdar' },
+  { label: 'النصيرات', value: 'nuseirat' },
+  { label: 'مخيم النصيرات', value: 'nuseirat_camp' },
+  { label: 'البريج', value: 'bureij' },
+  { label: 'الزوايدة', value: 'zawayda' },
+  { label: 'المغازي', value: 'maghazi' },
+  { label: 'مخيم المغازي', value: 'maghazi_camp' },
+  { label: 'وادي السلقا', value: 'wadi_salqa' },
+  { label: 'مخيم دير البلح', value: 'deir_al_balah_camp' },
+  { label: 'دير البلح', value: 'deir_al_balah' },
+  { label: 'القرارة', value: 'qarara' },
+  { label: 'خان يونس', value: 'khan_younis_city' },
+  { label: 'مخيم خان يونس', value: 'khan_younis_camp' },
+  { label: 'بني سهيلا', value: 'bani_suheila' },
+  { label: 'عبسان الكبيرة', value: 'abasan_kabira' },
+  { label: 'عبسان الصغيرة', value: 'abasan_saghira' },
+  { label: 'خزاعة', value: 'khuzaa' },
+  { label: 'الفخاري', value: 'fukhari' },
+  { label: 'رفح', value: 'rafah_city' },
+  { label: 'مخيم رفح', value: 'rafah_camp' },
+  { label: 'النصر', value: 'nasr' },
+  { label: 'الشوكة', value: 'shawka' },
+];
+
+export const AREA_LABELS = Object.fromEntries(
+  AREA_OPTIONS.map((o) => [o.value, o.label])
+);
+
+export const STATUS_LABELS = { available: 'متاح', reserved: 'محجوز', rented: 'مؤجر' };

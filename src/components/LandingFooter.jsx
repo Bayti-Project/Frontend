@@ -7,14 +7,15 @@ import {
   FaLinkedinIn,
   FaTwitter,
 } from "react-icons/fa";
-import "../pages/homeTenant.css";
+import footerImg from "./footer.png";
+import "../HomeTenant/homeTenant.css";
 
 export default function LandingFooter() {
   return (
     <footer className="lp-footer">
       <div className="lp-footer-grid">
         <div className="lp-footer-brand">
-          <img src="/footer.png" alt="بيتي Bayti" className="lp-footer-logo" />
+          <img src={footerImg} alt="بيتي Bayti" className="lp-footer-logo" />
           <p>منصة بيتي العقارية الرائدة في قطاع غزة، نربط الملاك والمستأجرين بأفضل العقارات.</p>
         </div>
         <div className="lp-footer-col">

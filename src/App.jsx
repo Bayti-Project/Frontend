@@ -1,27 +1,34 @@
 import { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import ResetPasswordForm from "./pages/ResetPasswordForm";
-import ChangePasswordForm from "./pages/ChangePasswordForm";
-import OwnerProfile from "./pages/OwnerProfile";
-import TenantProfile from "./pages/TenantProfile";
-import EditProfile from "./pages/EditProfile";
-import Home from "./pages/HomeVisitor";
-import HomeTenant from "./pages/HomeTenant";
-import OwnerHome from "./pages/OwnerHome";
-import PropertyEditPage from "./pages/PropertyEditPage";
-import AddPropertyPage from "./pages/AddPropertyPage";
-import AddPropertyPhotosPage from "./pages/AddPropertyPhotosPage";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
 import Navbar from "./components/Navbar";
 import LandingFooter from "./components/LandingFooter";
 import { resolveMediaUrl } from "./services/api.js";
 import "./styles/style.css";
 
+import ResetPasswordForm from "./ResetPasswordForm/ResetPasswordForm";
+import ChangePasswordForm from "./ChangePasswordForm/ChangePasswordForm";
+import OwnerProfile from "./OwnerProfile/OwnerProfile";
+import TenantProfile from "./TenantProfile/TenantProfile";
+import EditProfile from "./EditProfile/EditProfile";
+import Home from "./HomeVisitor/HomeVisitor";
+import HomeTenant from "./HomeTenant/HomeTenant";
+import OwnerHome from "./OwnerHome/OwnerHome";
+import PropertyEditPage from "./PropertyEditPage/PropertyEditPage";
+import AddPropertyPage from "./AddPropertyPage/AddPropertyPage";
+import AddPropertyPhotosPage from "./AddPropertyPhotosPage/AddPropertyPhotosPage";
+import AddPropertyPreviewPage from "./AddPropertyPreviewPage/AddPropertyPreviewPage";
+import Login from "./Login/Login";
+import Register from "./Register/Register";
+import ForgotPassword from "./ForgotPassword/ForgotPassword";
+import PropertyDetailsOwner from "./PropertyDetailsOwner/PropertyDetailsOwner";
+import SavedPropertiesPage from "./SavedPropertiesPage/SavedPropertiesPage";
+import SearchPage from "./Search/search";
+import PropertySearchPage from "./PropertySearch/PropertySearch";
+
 export default function App() {
   const navigate = useNavigate();
   const [view, setView] = useState("password");
+
   const [user, setUser] = useState(() => {
     let saved;
     try {
@@ -43,6 +50,9 @@ export default function App() {
   });
 
   const navProps = {
+    onPropertyClick: (id) => navigate(`/property/${id}`),
+    onSearchClick: () => navigate("/search"),
+    onSavedClick: () => navigate("/saved"),
     onHomeClick: () => {
       setView("password");
       const role = user.role || "";
@@ -96,11 +106,7 @@ export default function App() {
         navigate("/add-property");
       },
     };
-    return isOwner ? (
-      <OwnerProfile {...profileProps} />
-    ) : (
-      <TenantProfile {...profileProps} />
-    );
+    return isOwner ? <OwnerProfile {...profileProps} /> : <TenantProfile {...profileProps} />;
   }
 
   if (view === "edit") {
@@ -128,6 +134,7 @@ export default function App() {
   return (
     <Routes>
       {/* 1. إضافة مسار الصفحة الرئيسية للرابط الأساسي "/" */}
+
       <Route path="/" element={<Home {...navProps} />} />
 
       <Route path="/login" element={<Login />} />
@@ -135,6 +142,20 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/home" element={<Home {...navProps} />} />
       <Route path="/home-tenant" element={<HomeTenant {...navProps} />} />
+      <Route
+        path="/saved"
+        element={
+          <div className="page" dir="rtl">
+            <Navbar {...navProps} />
+            <SavedPropertiesPage
+              onOpenDetails={(id) => navigate(id ? `/property/${id}` : "/search")}
+            />
+            <LandingFooter />
+          </div>
+        }
+      />
+      <Route path="/search" element={<SearchPage {...navProps} />} />
+      <Route path="/property-search" element={<PropertySearchPage {...navProps} />} />
       <Route
         path="/home-owner"
         element={
@@ -160,6 +181,18 @@ export default function App() {
         }
       />
       <Route
+        path="/property-owner/:id"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <PropertyDetailsOwner />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
+      <Route
         path="/add-property/photos"
         element={
           <div className="page">
@@ -172,12 +205,37 @@ export default function App() {
         }
       />
       <Route
+        path="/add-property/preview"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <AddPropertyPreviewPage />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
+      <Route
         path="/add-property"
         element={
           <div className="page">
             <Navbar {...navProps} />
             <main className="main">
               <AddPropertyPage />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
+
+      <Route
+        path="/property/:id"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <PropertyDetailsOwner />   {/* بدل PropertyDetailsPage */}
             </main>
             <LandingFooter />
           </div>
@@ -213,5 +271,4 @@ export default function App() {
       <Route path="*" element={<Home {...navProps} />} />
     </Routes>
   );
-
 }
