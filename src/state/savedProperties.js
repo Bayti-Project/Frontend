@@ -6,7 +6,9 @@ function loadSaved() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         const list = raw ? JSON.parse(raw) : [];
-        return Array.isArray(list) ? list : [];
+        if (!Array.isArray(list)) return [];
+        // تطبيع العقارات المحفوظة سابقاً لتوحيد العملة على الشيكل
+        return list.map((p) => (p && typeof p === "object" ? { ...p, currency: "₪" } : p));
     } catch {
         return [];
     }
@@ -90,12 +92,12 @@ const CATEGORY_MAP = {
 export function toSavedItem(p) {
     if (!p) return null;
 
-    let currency = p.currency || "₪";
+    // الموقع موحّد على الشيكل: أي رمز في السعر القديم يُتجاهل
     let rawPrice = p.price;
     if (typeof rawPrice === "string") {
-        if (/[$,£€]/.test(rawPrice)) currency = "$";
         rawPrice = parseFloat(rawPrice.replace(/[^0-9.]/g, "")) || 0;
     }
+    const currency = "₪";
 
     const type = p.property_type || p.type;
     let image = p.image || "";

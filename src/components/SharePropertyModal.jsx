@@ -51,7 +51,7 @@ function getLocation(property) {
 function getPriceLabel(property) {
   if (!property) return "";
   const amount = Number(property.price || 0).toLocaleString();
-  const symbol = property.currency || "$";
+  const symbol = "₪";
   const isRent = /rent/i.test(
     [property.listing_type, property.purpose, property.rent_period, property.property_type]
       .filter(Boolean)

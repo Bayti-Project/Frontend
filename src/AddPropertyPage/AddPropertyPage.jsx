@@ -254,7 +254,7 @@ export default function AddPropertyPage() {
                                         onChange={handleChange}
                                         onBlur={handleBlur}
                                     />
-                                    <span className="ap-unit">دولار</span>
+                                    <span className="ap-unit">شيكل</span>
                                 </div>
                                 {showError("price") && <span className="ap-hint"><AlertCircleIcon /> يرجى ادخال السعر</span>}
                             </div>

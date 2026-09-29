@@ -401,7 +401,7 @@ export default function PropertyEditPage() {
                                         placeholder="فيلا فاخرة بإطلالة بانورامية"
                                     />
                                 </Field>
-                                <Field label="السعر (دولار)">
+                                <Field label="السعر (شيكل)">
                                     <input
                                         type="number"
                                         value={price}

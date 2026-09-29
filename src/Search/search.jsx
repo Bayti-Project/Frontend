@@ -270,7 +270,7 @@ function PropertyCard({ property, onClick }) {
         <p className="props-card-loc">
           <FaMapMarkerAlt /> {location || "غزة"}
         </p>
-        <p className="props-card-price" dir="ltr">${Number(property.price || 0).toLocaleString()}</p>
+        <p className="props-card-price">₪{Number(property.price || 0).toLocaleString()}</p>
         <div className="props-card-meta">
           {beds > 0 && (
             <span><FaBed /> {beds} غرف</span>

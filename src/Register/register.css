@@ -86,7 +86,9 @@ body,
 .image-content h1 {
   font-size: 30px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin: 0 auto 12px;
+  max-width: 100%;
+  text-align: center;
   /* مسافة متناسقة بين العنوان والفقرة */
   color: #ffffff;
 }

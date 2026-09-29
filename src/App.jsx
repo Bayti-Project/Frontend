@@ -235,7 +235,7 @@ export default function App() {
           <div className="page">
             <Navbar {...navProps} />
             <main className="main">
-              <PropertyDetailsOwner />   {/* بدل PropertyDetailsPage */}
+              <PropertyDetailsOwner />
             </main>
             <LandingFooter />
           </div>

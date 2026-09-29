@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch, resolveMediaUrl } from "../services/api";
+import { apiFetch, resolveMediaUrl, GOVERNORATE_OPTIONS } from "../services/api";
 import { useSaved, toggleSaved } from "../state/savedProperties";
 import "./OwnerHome.css";
 import containerImg from "./Container.png";
@@ -101,6 +101,9 @@ function CheckIcon() {
 
 const STATUS_LABELS = { available: "متاح", reserved: "محجوز", rented: "مؤجر" };
 const STATUS_KEYS = Object.keys(STATUS_LABELS);
+
+// الـ Backend يقبل رقماً فقط ل bedrooms، لذلك لا قيم مثل "4+"
+const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
 
 function getPropertyImage(p) {
     if (typeof p.image === "string" && p.image) return p.image;
@@ -267,20 +270,20 @@ export default function OwnerHome() {
                 {showFilterModal && (
                     <div className="filter-panel" style={{ display: "flex", gap: "10px", margin: "10px 0", flexWrap: "wrap" }}>
                         <select value={governorate} onChange={(e) => setGovernorate(e.target.value)} style={{ padding: "8px", borderRadius: "6px" }}>
-                            <option value="">كل المحافظات</option>
-                            <option value="gaza">غزة</option>
-                            <option value="north">الشمال</option>
-                            <option value="middle">الوسطى</option>
-                            <option value="khan_younis">خانيونس</option>
-                            <option value="rafah">رفح</option>
+                            {GOVERNORATE_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
                         </select>
 
                         <select value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} style={{ padding: "8px", borderRadius: "6px" }}>
                             <option value="">عدد الغرف (الكل)</option>
-                            <option value="1">1 غرف</option>
-                            <option value="2">2 غرف</option>
-                            <option value="3">3 غرف</option>
-                            <option value="4">4+ غرف</option>
+                            {BEDROOM_OPTIONS.map((value) => (
+                                <option key={value} value={value}>
+                                    {value} غرف
+                                </option>
+                            ))}
                         </select>
 
                         {(governorate || bedrooms) && (
@@ -352,7 +355,7 @@ export default function OwnerHome() {
                                                 {property.location || property.address || property.governorate}
                                             </p>
                                             <p className="listing-price">
-                                                ${Number(property.price || 0).toLocaleString()}
+                                                ₪{Number(property.price || 0).toLocaleString()}
                                             </p>
                                         </div>
 
@@ -423,7 +426,7 @@ export default function OwnerHome() {
                                 <p className="modal-property-id">#{pendingDelete.id}</p>
                                 <p className="modal-property-title">{pendingDelete.title}</p>
                                 <p className="modal-property-price">
-                                    ${Number(pendingDelete.price || 0).toLocaleString()}
+                                    ₪{Number(pendingDelete.price || 0).toLocaleString()}
                                 </p>
                             </div>
                         </div>

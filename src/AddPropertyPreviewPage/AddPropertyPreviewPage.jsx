@@ -267,7 +267,7 @@ export default function AddPropertyPreviewPage() {
                                         onChange={handleChange}
                                     />
                                 </Field>
-                                <Field label="سعر الإيجار (دولار)">
+                                <Field label="سعر الإيجار (شيكل)">
                                     <input
                                         type="number"
                                         name="price"
