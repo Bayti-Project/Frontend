@@ -9,9 +9,10 @@ export function resolveMediaUrl(path) {
 }
 
 export function authHeaders(json = true) {
-  const h = {
-    Authorization: `Bearer ${localStorage.getItem('access_token') || ''}`,
-  };
+  const h = {};
+  const token = localStorage.getItem('access_token');
+  // لا نرسل ترويسة Authorization بدون توكن، لأن الباك اند يرجّع 401 بدل اعتبار الطلب زائرًا
+  if (token) h.Authorization = `Bearer ${token}`;
   if (json) h['Content-Type'] = 'application/json';
   return h;
 }
@@ -77,10 +78,10 @@ async function fetchWithRetry(path, { method, headers, body }, retries = 2) {
 
 // طلب آمن: يجرب أولاً، وعند 401 يعيد تسجيل الدخول ويعيد المحاولة مرة واحدة
 export async function apiFetch(path, { method = 'GET', json, formData, headers: extraHeaders } = {}) {
-  const headers = {
-    Authorization: `Bearer ${localStorage.getItem('access_token') || ''}`,
-    ...(extraHeaders || {}),
-  };
+  const headers = { ...(extraHeaders || {}) };
+  const token = localStorage.getItem('access_token');
+  // الترويسة تُرسل فقط عند وجود توكن فعلي، وإلا ردّ الباك اند بـ 401 على الزائر
+  if (token) headers.Authorization = `Bearer ${token}`;
   let body;
   if (formData) {
     body = formData;
@@ -91,10 +92,18 @@ export async function apiFetch(path, { method = 'GET', json, formData, headers: 
 
   let res = await fetchWithRetry(`${API_BASE}${path}`, { method, headers, body });
 
-  if (res.status === 401) {
-    const ok = await refreshTokens();
-    if (ok) {
+  if (res.status === 401 && token) {
+    const refreshed = await refreshTokens();
+    if (refreshed) {
       headers.Authorization = `Bearer ${localStorage.getItem('access_token')}`;
+      res = await fetchWithRetry(`${API_BASE}${path}`, { method, headers, body });
+    } else {
+      // التوكن غير صالح ولا توجد بيانات اعتماد لتجديده:
+      // ننظّف الجلسة ونترك المسارات العامة تشتغل كزائر
+      clearCredentials();
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      delete headers.Authorization;
       res = await fetchWithRetry(`${API_BASE}${path}`, { method, headers, body });
     }
   }
@@ -192,6 +201,22 @@ export async function searchProperties(params = {}) {
   const qs = buildPropertySearchQuery(params);
   return apiFetch(`/api/properties/search/${qs ? `?${qs}` : ''}`);
 }
+
+// مسار أول صورة للعقار من أي حقل يحملها
+export function getPropertyImagePath(property) {
+  if (!property || typeof property !== 'object') return '';
+  const direct = property.image || property.main_image || property.thumbnail;
+  if (typeof direct === 'string' && direct.trim()) return direct.trim();
+  if (Array.isArray(property.images) && property.images.length) {
+    const first = property.images[0];
+    const raw = typeof first === 'string' ? first : first?.image;
+    if (typeof raw === 'string' && raw.trim()) return raw.trim();
+  }
+  return '';
+}
+
+// الموقع يعرض العقارات بصورها فقط؛ العقار بدون صورة ما بيظهر
+export const hasPropertyImage = (property) => Boolean(getPropertyImagePath(property));
 
 // ─── قيم البحث القابلة للعرض ───
 export const GOVERNORATE_OPTIONS = [

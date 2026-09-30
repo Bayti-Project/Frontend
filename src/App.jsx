@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useParams } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import LandingFooter from "./components/LandingFooter";
-import { resolveMediaUrl } from "./services/api.js";
+import AuthPromptModal from "./components/AuthPromptModal";
+import { resolveMediaUrl, clearCredentials } from "./services/api.js";
+import defaultAvatar from "./components/default-avatar.svg";
 import "./styles/style.css";
 
 import ResetPasswordForm from "./ResetPasswordForm/ResetPasswordForm";
@@ -24,6 +26,33 @@ import PropertyDetailsOwner from "./PropertyDetailsOwner/PropertyDetailsOwner";
 import SavedPropertiesPage from "./SavedPropertiesPage/SavedPropertiesPage";
 import SearchPage from "./Search/search";
 import PropertySearchPage from "./PropertySearch/PropertySearch";
+import MyRequests from "./myRequests/my requests.jsx";
+import Notifications from "./notifications/Notifications.jsx";
+
+
+const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
+
+/**
+ * يمنع الزائر غير المسجّل من الوصول لصفحة تفاصيل العقار من أي رابط،
+ * ويعرض نافذة "يجب إنشاء حساب لعرض التفاصيل" بدلاً منها.
+ */
+function RequireAuth({ children }) {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const [token] = useState(isLoggedIn);
+
+  if (token) return children;
+
+  return (
+    <div className="page" dir="rtl">
+      <AuthPromptModal
+        property={{ id }}
+        intent="details"
+        onClose={() => navigate(-1)}
+      />
+    </div>
+  );
+}
 
 export default function App() {
   const navigate = useNavigate();
@@ -43,7 +72,7 @@ export default function App() {
       accountType: saved?.accountType || "فرد",
       phone: saved?.phone || "0598 123 456",
       createdAt: "2023-01-01",
-      avatar: resolveMediaUrl(saved?.avatar) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+      avatar: resolveMediaUrl(saved?.avatar) || defaultAvatar,
       city: "غزة - الرمال",
       bio: "صاحب عقارات في قطاع غزة",
     };
@@ -52,6 +81,7 @@ export default function App() {
   const navProps = {
     onPropertyClick: (id) => navigate(`/property/${id}`),
     onSearchClick: () => navigate("/search"),
+    onRequestsClick: () => navigate("/my-requests"),
     onSavedClick: () => navigate("/saved"),
     onHomeClick: () => {
       setView("password");
@@ -80,6 +110,8 @@ export default function App() {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("bayti_user");
+      // مهم: بدون مسح بيانات الاعتماد يبقى refreshTokens يعيد تسجيل الدخول تلقائياً
+      clearCredentials();
       setUser({
         name: "أحمد محمد",
         email: "ahmed.mohamed@example.com",
@@ -87,7 +119,7 @@ export default function App() {
         accountType: "فرد",
         phone: "0598 123 456",
         createdAt: "2023-01-01",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+        avatar: defaultAvatar,
         city: "غزة - الرمال",
         bio: "صاحب عقارات في قطاع غزة",
       });
@@ -152,6 +184,30 @@ export default function App() {
             />
             <LandingFooter />
           </div>
+        }
+      />
+      <Route
+        path="/my-requests"
+        element={
+          <RequireAuth>
+            <div className="page" dir="rtl">
+              <Navbar {...navProps} />
+              <MyRequests />
+              <LandingFooter />
+            </div>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <RequireAuth>
+            <div className="page" dir="rtl">
+              <Navbar {...navProps} />
+              <Notifications onOpenLink={(path) => navigate(path)} />
+              <LandingFooter />
+            </div>
+          </RequireAuth>
         }
       />
       <Route path="/search" element={<SearchPage {...navProps} />} />
@@ -232,13 +288,15 @@ export default function App() {
       <Route
         path="/property/:id"
         element={
-          <div className="page">
-            <Navbar {...navProps} />
-            <main className="main">
-              <PropertyDetailsOwner />
-            </main>
-            <LandingFooter />
-          </div>
+          <RequireAuth>
+            <div className="page">
+              <Navbar {...navProps} />
+              <main className="main">
+                <PropertyDetailsOwner />
+              </main>
+              <LandingFooter />
+            </div>
+          </RequireAuth>
         }
       />
       <Route
@@ -249,6 +307,7 @@ export default function App() {
             <main className="main">
               <ChangePasswordForm />
             </main>
+            <LandingFooter />
           </div>
         }
       />

@@ -7,15 +7,11 @@ import {
   FaBed,
   FaBath,
   FaRulerCombined,
-  FaHeart,
+  FaBookmark,
+  FaShare,
   FaCheck,
   FaArrowLeft,
   FaPhone,
-  FaEnvelope,
-  FaFacebookF,
-  FaInstagram,
-  FaLinkedinIn,
-  FaTwitter,
   FaQuoteLeft,
   FaChevronRight,
   FaChevronLeft,
@@ -25,10 +21,12 @@ import {
   FaHeadset,
 } from "react-icons/fa";
 import "./homeTenant.css";
-import whoImg from "../components/who.png";
-import footerImg from "../components/footer.png";
+import whoImg from "../components/who.jpg";
 import PropertySearchBar from "../components/PropertySearchBar";
-import { useSaved, toggleSaved } from "../state/savedProperties";
+import { useSaved } from "../state/savedProperties";
+import SharePropertyModal from "../components/SharePropertyModal";
+import AuthPromptModal from "../components/AuthPromptModal";
+import LandingFooter from "../components/LandingFooter";
 
 const properties = [
   {
@@ -36,8 +34,8 @@ const properties = [
     title: "شقة فاخرة مطلة على البحر",
     location: "غزة، الرمال",
     price: "120,000 ₪",
-    type: "للبيع",
-    typeClass: "sale",
+    propertyType: "شقة",
+    property_type: "apartment",
     image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
     beds: 3,
     baths: 2,
@@ -48,8 +46,8 @@ const properties = [
     title: "فيلا عصريّة مع حديقة",
     location: "غزة، تل الهوا",
     price: "80,000 ₪",
-    type: "للإيجار",
-    typeClass: "rent",
+    propertyType: "فيلا",
+    property_type: "villa",
     image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&q=80",
     beds: 4,
     baths: 3,
@@ -60,8 +58,8 @@ const properties = [
     title: "مكتب تجاري في موقع حيوي",
     location: "غزة، النصر",
     price: "40,000 ₪",
-    type: "للبيع",
-    typeClass: "sale",
+    propertyType: "محل تجاري",
+    property_type: "shop",
     image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80",
     beds: 3,
     baths: 2,
@@ -95,13 +93,27 @@ export default function HomeTenant({
   onChangePasswordClick,
   onLogoutClick,
   onPropertyClick,
-  onSearchClick,
-  onSavedClick,
-}) {
-  const navigate = useNavigate();
+    onSearchClick,
+    onSavedClick,
+    onRequestsClick,
+  }) {
+    const navigate = useNavigate();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const savedItems = useSaved();
   const savedIds = new Set(savedItems.map((s) => String(s.id)));
+  const [prompt, setPrompt] = useState(null);
+  const [promptIntent, setPromptIntent] = useState("details");
+  const [shareTarget, setShareTarget] = useState(null);
+
+  function openAuthPrompt(property, intent) {
+    setPromptIntent(intent);
+    setPrompt(property);
+  }
+
+  function closeAuthPrompt() {
+    setPrompt(null);
+    setPromptIntent("details");
+  }
 
   // الخيارات لقائمة البحث (تُمرَّر للمكوّن القابل لإعادة الاستخدام)
   const regions = ['شمال غزة', 'غزة', 'وسط غزة', 'خانيونس', 'رفح', 'كل المناطق'];
@@ -177,6 +189,7 @@ export default function HomeTenant({
         onLogoutClick={onLogoutClick}
         onSearchClick={onSearchClick}
         onSavedClick={onSavedClick}
+        onRequestsClick={onRequestsClick}
       />
 
       {/* Hero */}
@@ -201,19 +214,38 @@ export default function HomeTenant({
       </section>
 
       {/* Featured Properties */}
-      <section className="lp-section">
+      <section id="top" className="lp-section">
         <div className="lp-section-head">
           <h2>أحدث العقارات</h2>
-          <a href="#" className="lp-section-link">مشاهدة الكل <FaArrowLeft /></a>
+          <button
+            type="button"
+            className="lp-section-link"
+            onClick={() => navigate("/search", { state: { landingNav: true } })}
+          >
+            مشاهدة الكل <FaArrowLeft />
+          </button>
         </div>
         <div className="lp-properties-grid">
           {properties.map((p) => (
             <article key={p.id} className="lp-property-card">
               <div className="lp-property-img-wrap">
                 <img src={p.image} alt={p.title} />
-                <span className={`lp-property-type ${p.typeClass}`}>{p.type}</span>
-                <button className={`lp-like-btn ${savedIds.has(String(p.id)) ? "liked" : ""}`} onClick={() => toggleSaved(p)}>
-                  {savedIds.has(String(p.id)) ? <FaHeart /> : <FaHeart style={{ opacity: 0.7 }} />}
+                <span className={`lp-property-type prop`}>{p.propertyType}</span>
+                <button
+                  className="lp-card-action share"
+                  type="button"
+                  aria-label="مشاركة العقار"
+                  onClick={() => setShareTarget(p)}
+                >
+                  <FaShare />
+                </button>
+                <button
+                  className={`lp-card-action save${savedIds.has(String(p.id)) ? " active" : ""}`}
+                  type="button"
+                  aria-label="حفظ العقار"
+                  onClick={() => openAuthPrompt(p, "save")}
+                >
+                  <FaBookmark />
                 </button>
               </div>
               <div className="lp-property-body">
@@ -244,7 +276,7 @@ export default function HomeTenant({
       </section>
 
       {/* How It Works */}
-      <section className="lp-section lp-steps-section">
+      <section id="how-it-works" className="lp-section lp-steps-section">
         <div className="lp-section-head center">
           <h2>كيف يعمل بيتي؟</h2>
           <p>خطوات بسيطة للوصول إلى العقار الذي تبحث عنه</p>
@@ -281,7 +313,7 @@ export default function HomeTenant({
       </section>
 
       {/* About Us */}
-      <section className="lp-section lp-about-section">
+      <section id="about-us" className="lp-section lp-about-section">
         <div className="lp-about-grid">
           <div className="lp-about-img">
             <img src={whoImg} alt="فريق بيتي" />
@@ -347,7 +379,7 @@ export default function HomeTenant({
       </section>
 
       {/* CTA */}
-      <section className="lp-cta-wrapper">
+      <section id="support" className="lp-cta-wrapper">
         <div className="lp-cta">
           <div className="lp-cta-text">
             <h2>تحتاج مساعدة؟ نحن هنا</h2>
@@ -365,50 +397,15 @@ export default function HomeTenant({
       </section>
 
       {/* Footer */}
-      <footer className="lp-footer">
-        <div className="lp-footer-grid">
-          <div className="lp-footer-brand">
-            <img src={footerImg} alt="بيتي Bayti" className="lp-footer-logo" />
-            <p>منصة بيتي العقارية الرائدة في قطاع غزة، نربط الملاك والمستأجرين بأفضل العقارات.</p>
-          </div>
-          <div className="lp-footer-col">
-            <h4>روابط سريعة</h4>
-            <ul>
-              <li><a href="#">الرئيسية</a></li>
-              <li><a href="#">عقارات للبيع</a></li>
-              <li><a href="#">عقارات للإيجار</a></li>
-              <li><a href="#">حسابي</a></li>
-            </ul>
-          </div>
-          <div className="lp-footer-col">
-            <h4>أنواع العقارات</h4>
-            <ul>
-              <li><a href="#">شقق</a></li>
-              <li><a href="#">فلل</a></li>
-              <li><a href="#">أبراج</a></li>
-              <li><a href="#">محلات تجارية</a></li>
-            </ul>
-          </div>
-          <div className="lp-footer-col">
-            <h4>تواصل معنا</h4>
-            <ul>
-              <li><FaEnvelope /> info@bayti.ps</li>
-              <li><FaPhone /> +970 59 000 0000</li>
-              <li><FaMapMarkerAlt /> قطاع غزة</li>
-            </ul>
-            <h4 className="lp-follow-title">تابعنا على</h4>
-            <div className="lp-social-row">
-              <a href="#" aria-label="Facebook"><FaFacebookF /></a>
-              <a href="#" aria-label="Twitter"><FaTwitter /></a>
-              <a href="#" aria-label="Instagram"><FaInstagram /></a>
-              <a href="#" aria-label="LinkedIn"><FaLinkedinIn /></a>
-            </div>
-          </div>
-        </div>
-        <div className="lp-footer-bottom">
-          © 2026 بيتي - جميع الحقوق محفوظة
-        </div>
-      </footer>
+      <LandingFooter />
+
+      <AuthPromptModal
+        property={prompt}
+        intent={promptIntent}
+        onClose={closeAuthPrompt}
+      />
+
+      <SharePropertyModal property={shareTarget} onClose={() => setShareTarget(null)} />
     </div>
   );
 }

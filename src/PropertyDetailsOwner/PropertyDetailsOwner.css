@@ -530,6 +530,89 @@
     margin-top: 30px;
 }
 
+.pdo-mine-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--pdo-radius-md);
+    background: var(--pdo-green-bg);
+    color: var(--pdo-green-text);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.pdo-mine-text {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--pdo-text-muted);
+}
+
+.pdo-btn--danger {
+    background: var(--pdo-red);
+    color: var(--pdo-white);
+    border-color: var(--pdo-red);
+}
+
+.pdo-btn--danger:hover:not(:disabled) {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.pdo-confirm {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdo-confirm__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 24, 0.5);
+}
+
+.pdo-confirm__box {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--pdo-white);
+    border: 1px solid var(--pdo-border);
+    border-radius: 16px;
+    padding: 28px 24px 22px;
+    width: 380px;
+    max-width: 90vw;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.pdo-confirm__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--pdo-red);
+}
+
+.pdo-confirm__text {
+    margin: 0 0 4px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--pdo-text-muted);
+}
+
+.pdo-confirm__error {
+    margin: 0;
+    font-size: 13px;
+    color: var(--pdo-red);
+}
+
 .pdo-owner-card__profile {
     display: flex;
     align-items: center;

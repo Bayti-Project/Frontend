@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FaWhatsapp,
   FaFacebook,
@@ -245,5 +246,10 @@ function ShareDialog({ property, onClose }) {
 
 export default function SharePropertyModal({ property, onClose }) {
   if (!property) return null;
-  return <ShareDialog key={property.id} property={property} onClose={onClose} />;
+  // البوابة ضرورية: الكارد فيه transform عند التحويم، وبيخلّي position:fixed
+  // يُحسب بالنسبة للكارد بدل الشاشة فتهتزّ النافذة وتظهر مكان العقار
+  return createPortal(
+    <ShareDialog key={property.id} property={property} onClose={onClose} />,
+    document.body
+  );
 }

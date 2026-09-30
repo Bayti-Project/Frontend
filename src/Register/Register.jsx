@@ -16,9 +16,18 @@ import {
   FaUserTie,
   FaBuilding,
   FaArrowLeft,
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
 
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+const PHONE_ERROR_MSG = "يرجى إدخال رقم مكون من 10 أرقام ويبدأ بـ 05";
+const PHONE_REGEX = /^05\d{8}$/;
+
+function normalizePhone(value) {
+  // نحتفظ بالأرقام فقط مع إزالة الفواصل والمسافات
+  return value.replace(/\D/g, "").slice(0, 10);
+}
 
 function Register() {
   const navigate = useNavigate();
@@ -28,6 +37,7 @@ function Register() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("مالك عقار");
   const [accountType, setAccountType] = useState("فرد");
   const [agree, setAgree] = useState(false);
@@ -45,6 +55,22 @@ function Register() {
         delete next[fieldName];
         return next;
       });
+    }
+  }
+
+  function handlePhoneChange(value) {
+    const digits = normalizePhone(value);
+    setPhone(digits);
+    if (fieldErrors.phone) {
+      if (!digits) {
+        setFieldErrors((prev) => {
+          const next = { ...prev };
+          delete next.phone;
+          return next;
+        });
+      } else if (PHONE_REGEX.test(digits)) {
+        clearFieldError("phone");
+      }
     }
   }
 
@@ -77,6 +103,7 @@ function Register() {
     const errors = {};
     if (!name.trim()) errors.name = "يرجى تعبئة الحقل";
     if (!phone.trim()) errors.phone = "يرجى تعبئة الحقل";
+    else if (!PHONE_REGEX.test(phone.trim())) errors.phone = PHONE_ERROR_MSG;
     if (!email.trim()) errors.email = "يرجى تعبئة الحقل";
     if (!password.trim()) errors.password = "يرجى تعبئة الحقل";
 
@@ -174,7 +201,6 @@ function Register() {
       {/* الصورة */}
       <div className="image-section">
         <img src={building} alt="Building" />
-        <div className="overlay"></div>
         <div className="logo">Bayti</div>
         <div className="image-content">
           <h1>مستقبلك يبدأ من هنا</h1>
@@ -244,14 +270,19 @@ function Register() {
             <input
               id="regPhone"
               type="tel"
-              placeholder="059 000 0000"
+              inputMode="numeric"
+              placeholder="0590000000"
               dir="ltr"
+              maxLength={10}
               value={phone}
-              onChange={(e) => {
-                setPhone(e.target.value);
-                clearFieldError("phone");
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              onBlur={() => {
+                if (phone && !PHONE_REGEX.test(phone)) {
+                  setFieldErrors((prev) => ({ ...prev, phone: PHONE_ERROR_MSG }));
+                }
               }}
               className={fieldErrors.phone ? "field-error-input" : ""}
+              aria-invalid={fieldErrors.phone ? "true" : undefined}
             />
             {fieldErrors.phone && (
               <span className="field-error-msg">{fieldErrors.phone}</span>
@@ -281,17 +312,29 @@ function Register() {
         {/* كلمة المرور */}
         <div className="field full">
           <label htmlFor="regPassword">كلمة المرور</label>
-          <input
-            id="regPassword"
-            type="password"
-            placeholder="أدخل كلمة المرور"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              clearFieldError("password");
-            }}
-            className={fieldErrors.password ? "field-error-input" : ""}
-          />
+          <div className="password-wrap">
+            <input
+              id="regPassword"
+              type={showPassword ? "text" : "password"}
+              placeholder="أدخل كلمة المرور"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearFieldError("password");
+              }}
+              className={fieldErrors.password ? "field-error-input" : ""}
+            />
+            <button
+              type="button"
+              className="toggle-eye"
+              aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
           {fieldErrors.password && (
             <span className="field-error-msg">{fieldErrors.password}</span>
           )}

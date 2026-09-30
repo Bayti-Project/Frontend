@@ -1,0 +1,261 @@
+/* ============================================================
+   Site Footer — بيتي
+   Shared footer for the whole site (RTL / Arabic)
+   ============================================================ */
+
+.sf-footer {
+  --sf-navy: #0b2545;
+  --sf-navy-light: #123458;
+  --sf-white: #ffffff;
+  --sf-text: #c3ccdb;
+  --sf-text-muted: #8e9bb2;
+  --sf-accent: #aedef2;
+  --sf-line: rgba(255, 255, 255, 0.09);
+
+  background: var(--sf-navy);
+  color: var(--sf-text);
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  direction: rtl;
+}
+
+.sf-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 36px 28px 0;
+}
+
+/* ---------- الشبكة: 4 أعمدة من اليمين لليسار ---------- */
+.sf-footer__grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.15fr;
+  gap: 32px;
+  padding-bottom: 28px;
+}
+
+/* ---------- العمود 1: اللوجو والوصف ---------- */
+.sf-footer__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.sf-footer__logo {
+  display: block;
+  height: 32px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  margin-bottom: 14px;
+}
+
+.sf-footer__desc {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--sf-text);
+}
+
+/* ---------- الأعمدة 2 و 3: روابط وأنواع ---------- */
+.sf-footer__col {
+  display: flex;
+  flex-direction: column;
+}
+
+.sf-footer__title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sf-white);
+}
+
+.sf-footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.sf-footer__link {
+  position: relative;
+  display: inline-block;
+  font-size: 13.5px;
+  color: var(--sf-text);
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.sf-footer__link::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -3px;
+  width: 0;
+  height: 1px;
+  background: var(--sf-accent);
+  transition: width 0.25s ease;
+}
+
+.sf-footer__link:hover,
+.sf-footer__link:focus-visible {
+  color: var(--sf-white);
+  transform: translateX(-3px);
+}
+
+.sf-footer__link:hover::after,
+.sf-footer__link:focus-visible::after {
+  width: 100%;
+}
+
+/* ---------- العمود 4: تواصل معنا ---------- */
+.sf-footer__contact {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sf-footer__contact li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 13.5px;
+  color: var(--sf-text);
+}
+
+.sf-footer__contact-icon {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(174, 222, 242, 0.12);
+  color: var(--sf-accent);
+  font-size: 14px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.sf-footer__contact li:hover .sf-footer__contact-icon {
+  background: rgba(174, 222, 242, 0.24);
+  transform: scale(1.08);
+}
+
+.sf-footer__contact a {
+  color: inherit;
+  text-decoration: none;
+  direction: ltr;
+  unicode-bidi: embed;
+  transition: color 0.2s ease;
+}
+
+.sf-footer__contact a:hover {
+  color: var(--sf-white);
+}
+
+.sf-footer__follow {
+  margin: 18px 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sf-white);
+}
+
+.sf-footer__social {
+  display: flex;
+  gap: 10px;
+}
+
+.sf-footer__social a {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--sf-text);
+  font-size: 15px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.22s ease, color 0.22s ease,
+    transform 0.22s ease, border-color 0.22s ease;
+}
+
+.sf-footer__social a:hover,
+.sf-footer__social a:focus-visible {
+  background: var(--sf-accent);
+  color: var(--sf-navy);
+  border-color: var(--sf-accent);
+  transform: translateY(-3px);
+}
+
+/* ---------- الشريط السفلي ---------- */
+.sf-footer__bottom {
+  border-top: 1px solid var(--sf-line);
+  padding: 16px 0 20px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--sf-text-muted);
+}
+
+.sf-footer__bottom p {
+  margin: 0;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* تابلت عريض: عمودان */
+@media (max-width: 1024px) {
+  .sf-footer__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px 28px;
+  }
+
+  .sf-footer__desc {
+    max-width: 46ch;
+  }
+}
+
+/* تابلت صغير: عمود واحد مع محاذاة مركزية للعلامات */
+@media (max-width: 640px) {
+  .sf-footer__inner {
+    padding: 32px 20px 0;
+  }
+
+  .sf-footer__grid {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    padding-bottom: 24px;
+  }
+
+  .sf-footer__brand {
+    align-items: center;
+    text-align: center;
+  }
+
+  .sf-footer__desc {
+    max-width: none;
+  }
+
+  .sf-footer__link:hover,
+  .sf-footer__link:focus-visible {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-footer__link,
+  .sf-footer__link::after,
+  .sf-footer__social a,
+  .sf-footer__contact-icon {
+    transition: none;
+  }
+}

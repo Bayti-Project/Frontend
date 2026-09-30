@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import '../OwnerProfile/OwnerProfile.css';
 import './TenantProfile.css';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import LandingFooter from '../components/LandingFooter';
 import { apiFetch, normalizeUser } from '../services/api.js';
+import { notifyUserChange } from '../state/currentUser.js';
+import defaultAvatar from '../components/default-avatar.svg';
 import {
     FaBookmark, FaPaperPlane, FaCheckCircle, FaTimesCircle, FaEdit,
     FaUserCheck, FaCalendarAlt, FaUserCircle, FaSpinner
@@ -15,7 +17,7 @@ const STATUS_MAP = {
     rejected: 'مرفوض',
 };
 
-const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick, onSearchClick, onSavedClick }) => {
+const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick, onSearchClick, onSavedClick, onRequestsClick }) => {
     const [loading, setLoading] = useState(true);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -26,7 +28,7 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
         whatsapp: currentUser?.whatsapp || '',
         role: currentUser?.role || 'مستأجر',
         joinedYear: currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2023',
-        avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'
+        avatar: currentUser?.avatar || defaultAvatar
     });
 
     const [statsData, setStatsData] = useState({
@@ -86,6 +88,7 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
                         avatar: u.avatar
                     })
                 );
+                notifyUserChange();
             })
             .catch((err) => console.error("Error fetching profile:", err))
             .finally(() => setLoading(false));
@@ -148,6 +151,7 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
                 onLogoutClick={onLogoutClick}
                 onSearchClick={onSearchClick}
                 onSavedClick={onSavedClick}
+                onRequestsClick={onRequestsClick}
             />
 
             <main className="main-content">
@@ -260,7 +264,7 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
                 )}
             </main>
 
-            <Footer />
+            <LandingFooter />
         </div>
     );
 };

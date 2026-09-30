@@ -427,7 +427,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url("../components/home.png");
+  background-image: url("../components/home.jpg");
   text-align: center;
   padding: 40px 20px;
 }
@@ -601,6 +601,11 @@ img {
 }
 
 .lp-section-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   color: var(--lp-navy);
@@ -672,30 +677,40 @@ img {
   background: #2F6FED;
 }
 
-.lp-like-btn {
+.lp-card-action {
   position: absolute;
   top: 12px;
-  left: 12px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.9);
-  color: #ef4444;
+  background: rgba(255, 255, 255, 0.92);
+  color: #4a5568;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
 }
 
-.lp-like-btn:hover {
-  background: var(--lp-white);
+.lp-card-action.share {
+  left: 56px;
+}
+
+.lp-card-action.save {
+  left: 12px;
+}
+
+.lp-card-action.save.active {
+  color: #0282ad;
+  background: rgba(228, 244, 248, 0.96);
+}
+
+.lp-card-action:hover {
+  background: #ffffff;
+  color: #0282ad;
   transform: scale(1.1);
-}
-
-.lp-like-btn.liked {
-  color: #ef4444;
 }
 
 .lp-property-body {
@@ -758,6 +773,7 @@ img {
 }
 
 .lp-property-btn {
+  width: 100%;
   padding: 8px 18px;
   border-radius: 8px;
   border: none;
@@ -1199,124 +1215,8 @@ img {
 }
 
 /* ============================================================
-   FOOTER
-   ============================================================ */
-.lp-footer {
-  background: var(--lp-navy);
-  color: #c7cedc;
-  padding: 32px 32px 0;
-}
-
-.lp-footer-grid {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr;
-  gap: 28px;
-  padding-bottom: 20px;
-}
-
-.lp-footer-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.lp-footer-logo {
-  height: 28px;
-  /* التحكم في الارتفاع المناسب */
-  width: auto !important;
-  /* منع أي تمديد عريض موروث */
-  max-width: 120px;
-  /* تحديد أقصى عرض مسموح به */
-  object-fit: contain;
-  /* الحفاظ على أبعاد اللوجو الأصلية بدون تمطيط */
-  display: block;
-  margin-bottom: 8px;
-}
-
-.lp-footer-brand p {
-  font-size: 12px;
-  line-height: 1.7;
-  color: #aeb6c9;
-}
-
-.lp-social-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.lp-social-row a {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--lp-teal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.lp-social-row a:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.lp-footer-col h4 {
-  color: var(--lp-white);
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-.lp-follow-title {
-  margin-top: 12px;
-}
-
-.lp-footer-col ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.lp-footer-col ul li,
-.lp-footer-col ul a {
-  font-size: 13px;
-  color: #aeb6c9;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: color 0.2s;
-}
-
-.lp-footer-col ul a:hover {
-  color: var(--lp-white);
-}
-
-.lp-footer-col ul li svg {
-  color: var(--lp-teal);
-  font-size: 14px;
-}
-
-.lp-footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  text-align: center;
-  padding: 12px 0;
-  font-size: 12px;
-  color: #8892a6;
-}
-
-/* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 1024px) {
-  .lp-footer-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 @media (max-width: 900px) {
   .tnt-header-inner {
     padding: 10px 16px;
@@ -1359,11 +1259,6 @@ img {
 
   .lp-about-img img {
     min-height: 260px;
-  }
-
-  .lp-footer-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
   }
 }
 
@@ -1419,15 +1314,18 @@ img {
   .lp-testimonial-card {
     max-width: 100%;
   }
-
-  .lp-footer-grid {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
 }
 
-@media (max-width: 768px) {
-  .lp-footer {
-    display: none;
-  }
+.lp-property-type.prop {
+  background: var(--lp-navy);
+}
+
+
+
+/* الهيدر ثابت (sticky)؛ نزيح الأقسام تحته عند القفز بالـ anchor */
+#top,
+#how-it-works,
+#about-us,
+#support {
+  scroll-margin-top: 90px;
 }

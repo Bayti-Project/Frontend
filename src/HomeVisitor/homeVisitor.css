@@ -49,86 +49,7 @@ img {
 /* ============================================================
    HEADER
    ============================================================ */
-.lp-header {
-  background: var(--lp-white);
-  border-bottom: 1px solid var(--lp-border);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
-.lp-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 14px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.lp-logo-img {
-  height: 40px;
-  width: auto;
-}
-
-.lp-nav {
-  display: flex;
-  gap: 32px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.lp-nav a {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--lp-navy);
-  transition: color 0.2s;
-}
-
-.lp-nav a:hover {
-  color: var(--lp-teal);
-}
-
-.lp-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.lp-btn-login {
-  padding: 9px 24px;
-  border-radius: 8px;
-  background: var(--lp-navy);
-  color: var(--lp-white);
-  font-size: 14px;
-  font-weight: 700;
-  transition: background 0.2s;
-}
-
-.lp-btn-login:hover {
-  background: #06122b;
-}
-
-.lp-btn-register {
-  padding: 9px 24px;
-  border-radius: 8px;
-  border: 1.5px solid var(--lp-navy);
-  background: transparent;
-  color: var(--lp-navy);
-  font-size: 14px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.2s, color 0.2s;
-}
-
-.lp-btn-register:hover {
-  background: var(--lp-navy);
-  color: var(--lp-white);
-}
+/* تنسيقات الهيدر في components/LandingHeader.css */
 
 /* ============================================================
    HERO
@@ -139,7 +60,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url("../components/home.png");
+  background-image: url("../components/home.jpg");
   text-align: center;
   padding: 40px 20px;
 }
@@ -272,6 +193,11 @@ img {
 }
 
 .lp-section-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   color: var(--lp-navy);
@@ -343,30 +269,40 @@ img {
   background: #2F6FED;
 }
 
-.lp-like-btn {
+.lp-card-action {
   position: absolute;
   top: 12px;
-  left: 12px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.9);
-  color: #ef4444;
+  background: rgba(255, 255, 255, 0.92);
+  color: #4a5568;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
 }
 
-.lp-like-btn:hover {
-  background: var(--lp-white);
+.lp-card-action.share {
+  left: 56px;
+}
+
+.lp-card-action.save {
+  left: 12px;
+}
+
+.lp-card-action.save.active {
+  color: #0282ad;
+  background: rgba(228, 244, 248, 0.96);
+}
+
+.lp-card-action:hover {
+  background: #ffffff;
+  color: #0282ad;
   transform: scale(1.1);
-}
-
-.lp-like-btn.liked {
-  color: #ef4444;
 }
 
 .lp-property-body {
@@ -429,6 +365,7 @@ img {
 }
 
 .lp-property-btn {
+  width: 100%;
   padding: 8px 18px;
   border-radius: 8px;
   border: none;
@@ -443,124 +380,6 @@ img {
 
 .lp-property-btn:hover {
   background: #06122b;
-}
-
-/* ============================================================
-   AUTH PROMPT — مطلوب حساب لعرض تفاصيل العقار
-   ============================================================ */
-.lp-auth-prompt {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.lp-auth-prompt__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(10, 37, 64, 0.6);
-  backdrop-filter: blur(3px);
-}
-
-.lp-auth-prompt__box {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  background: var(--lp-white);
-  border-radius: 18px;
-  padding: 34px 26px 26px;
-  text-align: center;
-  box-shadow: 0 25px 70px rgba(10, 37, 64, 0.35);
-}
-
-.lp-auth-prompt__close {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 50%;
-  background: var(--lp-bg);
-  color: var(--lp-muted);
-  font-size: 15px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, color 0.2s;
-}
-
-.lp-auth-prompt__close:hover {
-  background: var(--lp-navy);
-  color: var(--lp-white);
-}
-
-.lp-auth-prompt__icon {
-  width: 66px;
-  height: 66px;
-  margin: 0 auto 16px;
-  border-radius: 50%;
-  background: var(--lp-secondary-100);
-  color: var(--lp-navy);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.lp-auth-prompt__box h3 {
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--lp-navy);
-  margin-bottom: 8px;
-}
-
-.lp-auth-prompt__box p {
-  font-size: 14px;
-  color: var(--lp-muted);
-  line-height: 1.7;
-  margin-bottom: 22px;
-}
-
-.lp-auth-prompt__btn {
-  width: 100%;
-  padding: 12px 18px;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.lp-auth-prompt__btn.primary {
-  background: var(--lp-navy);
-  color: var(--lp-white);
-  border: 1.5px solid var(--lp-navy);
-  margin-bottom: 10px;
-}
-
-.lp-auth-prompt__btn.primary:hover {
-  background: #06122b;
-}
-
-.lp-auth-prompt__btn.outline {
-  background: transparent;
-  color: var(--lp-navy);
-  border: 1.5px solid var(--lp-navy);
-}
-
-.lp-auth-prompt__btn.outline:hover {
-  background: var(--lp-navy);
-  color: var(--lp-white);
 }
 
 /* ============================================================
@@ -987,134 +806,11 @@ img {
   background: #06122b;
 }
 
-/* ============================================================
-   FOOTER
-   ============================================================ */
-.lp-footer {
-  background: var(--lp-navy);
-  color: #c7cedc;
-  padding: 60px 32px 0;
-}
-
-.lp-footer-grid {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr;
-  gap: 40px;
-  padding-bottom: 40px;
-}
-
-.lp-footer-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.lp-footer-logo {
-  height: 32px;
-  /* التحكم في الارتفاع المناسب */
-  width: auto !important;
-  /* منع أي تمديد عريض موروث */
-  max-width: 140px;
-  /* تحديد أقصى عرض مسموح به */
-  object-fit: contain;
-  /* الحفاظ على أبعاد اللوجو الأصلية بدون تمطيط */
-  display: block;
-  margin-bottom: 12px;
-}
-
-.lp-footer-brand p {
-  font-size: 13px;
-  line-height: 1.8;
-  color: #aeb6c9;
-}
-
-.lp-social-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.lp-social-row a {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--lp-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.lp-social-row a:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.lp-footer-col h4 {
-  color: var(--lp-white);
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 16px;
-}
-
-.lp-follow-title {
-  margin-top: 20px;
-}
-
-.lp-footer-col ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.lp-footer-col ul li,
-.lp-footer-col ul a {
-  font-size: 13px;
-  color: #aeb6c9;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: color 0.2s;
-}
-
-.lp-footer-col ul a:hover {
-  color: var(--lp-white);
-}
-
-.lp-footer-col ul li svg {
-  color: var(--lp-teal);
-  font-size: 14px;
-}
-
-.lp-footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  text-align: center;
-  padding: 18px 0;
-  font-size: 13px;
-  color: #8892a6;
-}
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 1024px) {
-  .lp-footer-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 @media (max-width: 900px) {
-  .lp-header-inner {
-    padding: 10px 20px;
-  }
-
-  .lp-nav {
-    display: none;
-  }
-
   .lp-hero {
     min-height: 380px;
     padding: 32px 16px;
@@ -1137,24 +833,9 @@ img {
   .lp-about-img img {
     min-height: 260px;
   }
-
-  .lp-footer-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
-  }
 }
 
 @media (max-width: 600px) {
-  .lp-header-actions {
-    gap: 8px;
-  }
-
-  .lp-btn-login,
-  .lp-btn-register {
-    padding: 7px 14px;
-    font-size: 12px;
-  }
-
   .lp-section {
     padding: 36px 16px;
   }
@@ -1196,15 +877,18 @@ img {
   .lp-testimonial-card {
     max-width: 100%;
   }
-
-  .lp-footer-grid {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
 }
 
-@media (max-width: 768px) {
-  .lp-footer {
-    display: none;
-  }
+.lp-property-type.prop {
+  background: var(--lp-navy);
+}
+
+
+
+/* الهيدر ثابت (sticky)؛ نزيح الأقسام تحته عند القفز بالـ anchor */
+#top,
+#how-it-works,
+#about-us,
+#support {
+  scroll-margin-top: 90px;
 }

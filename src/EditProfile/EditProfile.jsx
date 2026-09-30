@@ -1,15 +1,17 @@
 import { useRef, useState, useEffect } from "react";
 import { FaCheckCircle, FaUpload, FaSpinner } from "react-icons/fa";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import LandingFooter from "../components/LandingFooter";
 import { mapApiError, apiFetch, resolveMediaUrl, normalizeUser } from "../services/api.js";
+import { notifyUserChange } from "../state/currentUser.js";
+import defaultAvatar from "../components/default-avatar.svg";
 import "../styles/style.css";
 import "./EditProfile.css";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
 
-export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick, onProfileClick, onChangePasswordClick, onLogoutClick, onSearchClick, onSavedClick }) {
+export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick, onProfileClick, onChangePasswordClick, onLogoutClick, onSearchClick, onSavedClick, onRequestsClick }) {
   const [name, setName] = useState(currentUser?.name || "");
   const [email, setEmail] = useState(currentUser?.email || "");
   const [phone, setPhone] = useState(currentUser?.phone || "");
@@ -146,6 +148,7 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
           'bayti_user',
           JSON.stringify({ ...saved, ...updatedData })
         );
+        notifyUserChange();
 
         setSavedData(updatedData);
         setSuccess(true);
@@ -172,6 +175,7 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
         onLogoutClick={onLogoutClick}
         onSearchClick={onSearchClick}
         onSavedClick={onSavedClick}
+        onRequestsClick={onRequestsClick}
       />
 
       <main className="edit-profile-main">
@@ -190,7 +194,7 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
             {/* قسم صورة الملف الشخصي */}
             <div className="edit-avatar-section">
               <img
-                src={avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80"}
+                src={avatar || defaultAvatar}
                 alt="الصورة الشخصية"
                 className="edit-avatar"
               />
@@ -308,7 +312,7 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
         </div>
       )}
 
-      <Footer />
+      <LandingFooter />
     </div>
   );
 }

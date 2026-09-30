@@ -12,9 +12,10 @@ const PropertySearch = ({
     onProfileClick,
     onChangePasswordClick,
     onLogoutClick,
-    onSavedClick,
-}) => {
-    const navigate = useNavigate();
+      onSavedClick,
+      onRequestsClick,
+  }) => {
+      const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const goToSearch = () => {
         const query = searchParams.toString();
@@ -98,6 +99,8 @@ const PropertySearch = ({
                 onChangePasswordClick={onChangePasswordClick}
                 onLogoutClick={onLogoutClick}
                 onSavedClick={onSavedClick}
+          onSavedClick={onSavedClick}
+          onRequestsClick={onRequestsClick}
             />
 
             <section className="props-hero">

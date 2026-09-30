@@ -1,0 +1,133 @@
+/* ============================================================
+   Landing Header — مشترك بين الصفحة الرئيسية وصفحة البحث
+   ============================================================ */
+
+.lp-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e7e9ee;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.lp-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.lp-logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.lp-logo-img {
+  height: 40px;
+  width: auto;
+}
+
+.lp-nav {
+  display: flex;
+  gap: 32px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.lp-nav a {
+  position: relative;
+  display: inline-block;
+  padding: 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0a2540;
+  transition: color 0.2s;
+}
+
+.lp-nav a:hover {
+  color: #aedef2;
+}
+
+/* الخط المتحرك الذي ينتقل للرابط المُفعّل */
+.lp-nav a.active {
+  color: #0282ad;
+  font-weight: 700;
+}
+
+.lp-nav a.active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: #0282ad;
+}
+
+.lp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.lp-btn-login {
+  padding: 9px 24px;
+  border-radius: 8px;
+  background: #0a2540;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.lp-btn-login:hover {
+  background: #06122b;
+}
+
+.lp-btn-register {
+  padding: 9px 24px;
+  border-radius: 8px;
+  border: 1.5px solid #0a2540;
+  background: transparent;
+  color: #0a2540;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lp-btn-register:hover {
+  background: #0a2540;
+  color: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .lp-header-inner {
+    padding: 10px 20px;
+  }
+
+  .lp-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .lp-header-actions {
+    gap: 8px;
+  }
+
+  .lp-btn-login,
+  .lp-btn-register {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+}

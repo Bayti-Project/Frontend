@@ -1,20 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { FaThLarge, FaListUl, FaMapMarkerAlt, FaChevronLeft, FaChevronRight, FaShare, FaBookmark, FaBed, FaBath, FaRulerCombined } from "react-icons/fa";
+import AuthPromptModal from "../components/AuthPromptModal";
 import {
   searchProperties,
   resolveMediaUrl,
+  hasPropertyImage,
+  getPropertyImagePath,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
 } from "../services/api.js";
 import Navbar from "../components/Navbar";
 import LandingFooter from "../components/LandingFooter";
+import LandingHeader from "../components/LandingHeader";
 import PropertySearchBar from "../components/PropertySearchBar";
 import SharePropertyModal from "../components/SharePropertyModal";
-import { useSaved, toggleSaved } from "../state/savedProperties";
+import { useSaved, addSaved, removeSaved } from "../state/savedProperties";
 import "./search.css";
 
 const PAGE_SIZE = 6;
+
+// الزائر غير المسجّل لا يستطيع فتح التفاصيل أو الحفظ
+const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
 
 const ELECTRICITY_OPTIONS = [
   { label: "الكهرباء العامة", value: "main_grid" },
@@ -203,7 +210,7 @@ export function FilterSidebar({ onApply, onReset }) {
   );
 }
 
-function PropertyCard({ property, onClick }) {
+function PropertyCard({ property, onClick, onSave }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [shareTarget, setShareTarget] = useState(null);
   const savedItems = useSaved();
@@ -220,16 +227,7 @@ function PropertyCard({ property, onClick }) {
     property.governorate ||
     "";
 
-  const firstImage = Array.isArray(property.images) && property.images[0]
-    ? (typeof property.images[0] === "string" ? property.images[0] : property.images[0]?.image || "")
-    : "";
-
-  const imgUrl = resolveMediaUrl(
-    property.image ||
-    property.main_image ||
-    property.thumbnail ||
-    firstImage
-  );
+  const imgUrl = resolveMediaUrl(getPropertyImagePath(property));
   const beds = property.bedrooms || 0;
   const baths = property.bathrooms || 0;
   const area = property.area_sqm || property.area || 0;
@@ -260,7 +258,10 @@ function PropertyCard({ property, onClick }) {
           className={`props-card-icon saved${isSaved ? " active" : ""}`}
           type="button"
           aria-label={isSaved ? "إزالة من المحفوظات" : "حفظ"}
-          onClick={() => toggleSaved(property)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSave?.(property);
+          }}
         >
           <FaBookmark />
         </button>
@@ -292,7 +293,7 @@ function PropertyCard({ property, onClick }) {
   );
 }
 
-function PropertyGrid({ properties, view, onPropertyClick }) {
+function PropertyGrid({ properties, view, onPropertyClick, onSave }) {
   if (view === "map") {
     return (
       <div className="props-map-placeholder">
@@ -306,7 +307,7 @@ function PropertyGrid({ properties, view, onPropertyClick }) {
   return (
     <div className={`props-grid${view === "list" ? " list-view" : ""}`}>
       {properties.map((p) => (
-        <PropertyCard key={p.id} property={p} onClick={onPropertyClick} />
+        <PropertyCard key={p.id} property={p} onClick={onPropertyClick} onSave={onSave} />
       ))}
     </div>
   );
@@ -373,14 +374,19 @@ function SuggestionBar({ suggestions, onPick }) {
   );
 }
 
-function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswordClick, onLogoutClick, onSavedClick }) {
+function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswordClick, onLogoutClick, onSavedClick, onRequestsClick }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const showLandingNav = Boolean(location.state?.landingNav);
   const currentSearch = searchParams.toString();
 
   const [view, setView] = useState("grid");
   const [sortBy, setSortBy] = useState("الأحدث إضافة");
   const [page, setPage] = useState(1);
+  const [prompt, setPrompt] = useState(null);
+  const savedItems = useSaved();
+  const savedIds = new Set(savedItems.map((s) => String(s.id)));
 
   const regions = ['شمال غزة', 'غزة', 'وسط غزة', 'خانيونس', 'رفح', 'كل المناطق'];
   const propertyTypes = ['شقق سكنية', 'قطعة أرض', 'فيلا', 'حاصل', 'بركس', 'محل تجاري'];
@@ -489,27 +495,15 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
         if (cancelled) return;
         if (!res.ok) throw new Error("فشل البحث في العقارات");
         const data = await res.json().catch(() => ({}));
-        const results = Array.isArray(data.results) ? data.results : [];
+        // العقارات بدون صور ما بتنعرض
+        const results = Array.isArray(data.results)
+          ? data.results.filter(hasPropertyImage)
+          : [];
         const nextSuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
 
         setProperties(results);
-        setCount(typeof data.count === "number" ? data.count : results.length);
+        setCount(results.length);
         setSuggestions(nextSuggestions);
-
-        if (results.length === 0) {
-          const redirectParams = new URLSearchParams(currentSearch);
-          if (params.governorate) redirectParams.set("governorate", params.governorate);
-          if (params.area) redirectParams.set("area", params.area);
-          if (params.neighborhood) redirectParams.set("neighborhood", params.neighborhood);
-          if (params.property_type) redirectParams.set("property_type", params.property_type);
-          if (params.bedrooms) redirectParams.set("bedrooms", params.bedrooms);
-          if (params.min_price) redirectParams.set("min_price", params.min_price);
-          if (params.max_price) redirectParams.set("max_price", params.max_price);
-          if (params.electricity?.length) redirectParams.set("electricity", params.electricity.join(","));
-          if (params.water?.length) redirectParams.set("water", params.water.join(","));
-          const redirectQuery = redirectParams.toString();
-          navigate(`/property-search${redirectQuery ? `?${redirectQuery}` : ""}`, { replace: true });
-        }
       })
       .catch((err) => {
         if (!cancelled) setError(err.message || "تعذر الاتصال بالخادم");
@@ -577,19 +571,39 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
   };
 
   const handlePropertyClick = (property) => {
+    if (!isLoggedIn()) {
+      setPrompt({ property, intent: "details" });
+      return;
+    }
     navigate(`/property/${property.id}`);
+  };
+
+  // زر الحفظ في الكارد: يمنع الحفظ للزائر ويطلب حساباً
+  const handleSaveClick = (property) => {
+    if (!isLoggedIn()) {
+      setPrompt({ property, intent: "save" });
+      return;
+    }
+    const saved = savedIds.has(String(property.id));
+    if (saved) removeSaved(property.id);
+    else addSaved(property);
   };
 
   return (
     <div className="page" dir="rtl">
-      <Navbar
-        onHomeClick={onHomeClick}
-        onSearchClick={onSearchClick}
-        onProfileClick={onProfileClick}
-        onChangePasswordClick={onChangePasswordClick}
-        onLogoutClick={onLogoutClick}
-        onSavedClick={onSavedClick}
-      />
+      {showLandingNav ? (
+        <LandingHeader linkBase="/home" />
+      ) : (
+        <Navbar
+          onHomeClick={onHomeClick}
+          onSearchClick={onSearchClick}
+          onProfileClick={onProfileClick}
+          onChangePasswordClick={onChangePasswordClick}
+          onLogoutClick={onLogoutClick}
+          onSavedClick={onSavedClick}
+          onRequestsClick={onRequestsClick}
+        />
+      )}
 
       <section className="props-hero">
         <div className="props-hero-pattern" />
@@ -618,7 +632,11 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
               <FaMapMarkerAlt /> قطاع غزة
             </span>
             <p>
-              تم العثور على {count} عقار متاح
+              {error
+                ? "تعذر تحميل النتائج"
+                : loading
+                  ? "جاري البحث عن العقارات..."
+                  : `تم العثور على ${count} عقار متاح`}
             </p>
           </div>
 
@@ -686,6 +704,7 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
                   properties={sorted}
                   view={view}
                   onPropertyClick={handlePropertyClick}
+                  onSave={handleSaveClick}
                 />
                 <Pagination current={page} totalPages={totalPages} onChange={setPage} />
               </>
@@ -695,6 +714,12 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
       </main>
 
       <LandingFooter />
+
+      <AuthPromptModal
+        property={prompt?.property}
+        intent={prompt?.intent}
+        onClose={() => setPrompt(null)}
+      />
     </div>
   );
 }

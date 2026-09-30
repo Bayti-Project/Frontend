@@ -2,9 +2,10 @@ import { useState } from "react";
 import "./SavedPropertiesPage.css";
 import SharePropertyModal from "../components/SharePropertyModal";
 import { useSaved, addSaved, removeSaved, clearSaved } from "../state/savedProperties";
-import apartmentSeaView from "./apartment-sea-view.png";
-import villaExterior from "./villa-exterior.png";
-import officeSpace from "./office-space.png";
+import { hasPropertyImage } from "../services/api.js";
+import apartmentSeaView from "./apartment-sea-view.jpg";
+import villaExterior from "./villa-exterior.jpg";
+import officeSpace from "./office-space.jpg";
 
 // عقارات مقترحة تظهر لما تكون قائمة المحفوظات فارغة بالكامل (نفس بيانات
 // قسم "اقتراحات قد تعجبك" في صفحة تفاصيل العقار)
@@ -223,8 +224,10 @@ export default function SavedPropertiesPage({ onOpenDetails }) {
     const clearAllItems = () => clearSaved();
     const addRecommended = (property) => addSaved(property);
 
+    // العقارات بدون صور ما بتنعرض
+    const withImage = saved.filter(hasPropertyImage);
     const filtered =
-        activeFilter === "all" ? saved : saved.filter((p) => p.category === activeFilter);
+        activeFilter === "all" ? withImage : withImage.filter((p) => p.category === activeFilter);
     const visible = sort === "oldest" ? [...filtered].reverse() : filtered;
 
     return (
@@ -233,15 +236,15 @@ export default function SavedPropertiesPage({ onOpenDetails }) {
                 {/* العنوان */}
                 <div className="saved-title-row">
                     <h1>العقارات المحفوظة</h1>
-                    <span className="saved-count-pill">{countText(saved.length)}</span>
+                    <span className="saved-count-pill">{countText(withImage.length)}</span>
                 </div>
-                <p className="saved-subtitle">{subtitleText(saved.length)}</p>
+                <p className="saved-subtitle">{subtitleText(withImage.length)}</p>
 
                 {/* شريط الفلترة والترتيب */}
                 <div className="saved-filter-bar">
                     <div className="saved-chips" role="group" aria-label="تصنيف العقارات">
                         {categories.map((cat) => {
-                            const count = saved.filter((p) => p.category === cat.id).length;
+                            const count = withImage.filter((p) => p.category === cat.id).length;
                             return (
                                 <button
                                     key={cat.id}
@@ -286,7 +289,7 @@ export default function SavedPropertiesPage({ onOpenDetails }) {
                             type="button"
                             className="saved-clear"
                             onClick={clearAllItems}
-                            disabled={saved.length === 0}
+                            disabled={withImage.length === 0}
                         >
                             <ClearIcon />
                             تفريغ المحفوظات
@@ -295,7 +298,7 @@ export default function SavedPropertiesPage({ onOpenDetails }) {
                 </div>
 
                 {/* البطاقات */}
-                {saved.length === 0 ? (
+                {withImage.length === 0 ? (
                     <>
                         <div className="saved-empty-hero">
                             <div className="saved-empty-icon">

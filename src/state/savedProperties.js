@@ -89,6 +89,14 @@ const CATEGORY_MAP = {
     shop: "residential",
 };
 
+// الموقع للإيجار فقط، فأي نوع تعامل قديم يُوحَّد إلى "للايجار"
+function normalizeListingType(value) {
+    const raw = typeof value === "string" ? value.trim() : "";
+    if (!raw) return "للايجار";
+    if (raw.includes("بيع")) return "للايجار";
+    return raw;
+}
+
 export function toSavedItem(p) {
     if (!p) return null;
 
@@ -108,11 +116,12 @@ export function toSavedItem(p) {
     return {
         id: p.id,
         category: p.category || CATEGORY_MAP[type] || "residential",
-        listingType:
+        // الموقع للإيجار فقط: أي "للبيع" قديمة تتحوّل إلى "للايجار"
+        listingType: normalizeListingType(
             p.listingType ||
             p.listing_type ||
-            p.purpose ||
-            (type === "للبيع" ? "للبيع" : "للايجار"),
+            p.purpose
+        ),
         title: p.title || "عقار",
         location:
             p.location ||

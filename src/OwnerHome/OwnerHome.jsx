@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiFetch, resolveMediaUrl, GOVERNORATE_OPTIONS } from "../services/api";
 import { useSaved, toggleSaved } from "../state/savedProperties";
 import "./OwnerHome.css";
-import containerImg from "./Container.png";
+import containerImg from "./Container.jpg";
 
 // Icons
 function BookmarkIcon({ filled = false }) {

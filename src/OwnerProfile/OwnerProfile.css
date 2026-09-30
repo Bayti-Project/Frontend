@@ -455,105 +455,6 @@ body {
     text-decoration: underline;
 }
 
-/* Full Footer (Figma Style) */
-.footer-full {
-    background-color: #031428;
-    color: #ffffff;
-    padding: 1rem 1.5rem 0.5rem;
-    margin-top: 1rem;
-}
-
-.footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1.5fr;
-    gap: 1.2rem;
-    padding-bottom: 0.8rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-text-footer {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #ffffff;
-}
-
-.footer-desc {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    margin-top: 0.4rem;
-    line-height: 1.5;
-}
-
-.footer-col h4 {
-    font-size: 0.85rem;
-    margin-bottom: 0.45rem;
-    color: #ffffff;
-}
-
-.footer-col ul {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-
-.footer-col ul a {
-    color: #94a3b8;
-    text-decoration: none;
-    font-size: 0.8rem;
-    transition: color 0.2s;
-}
-
-.footer-col ul a:hover {
-    color: #38bdf8;
-}
-
-.contact-col p {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    margin-bottom: 0.3rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.social-links {
-    margin-top: 0.4rem;
-}
-
-.social-links span {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    display: block;
-    margin-bottom: 0.3rem;
-}
-
-.social-icons {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.social-icons a {
-    background-color: #0284c7;
-    color: #ffffff;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    text-decoration: none;
-}
-
-.footer-bottom {
-    text-align: center;
-    padding-top: 0.4rem;
-    font-size: 0.7rem;
-    color: #64748b;
-}
 
 /* ============================================================
    RESPONSIVE للجوال والتابلت
@@ -569,11 +470,6 @@ body {
 
     .nav-links {
         display: none;
-    }
-
-    .footer-container {
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
     }
 }
 
@@ -614,19 +510,5 @@ body {
     .property-item,
     .request-item {
         flex-wrap: wrap;
-    }
-
-    .footer-container {
-        grid-template-columns: 1fr;
-    }
-
-    .footer-full {
-        padding: 1.2rem 1rem 0.5rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .footer-full {
-        display: none;
     }
 }

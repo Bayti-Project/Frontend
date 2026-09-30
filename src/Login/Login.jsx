@@ -78,7 +78,7 @@ function Login() {
             <div
                 className="login-image-section"
                 style={{
-                    backgroundImage: `linear-gradient(180deg, rgba(14, 43, 69, 0.25) 0%, rgba(10, 25, 41, 0.65) 100%), url(${heroImg})`
+                    backgroundImage: `url(${heroImg})`
                 }}
             >
                 <div className="brand-logo">Bayti</div>

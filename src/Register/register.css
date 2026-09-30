@@ -57,20 +57,6 @@ body,
    IMAGE SECTION UPDATES
 ========================= */
 
-/* 1. زيادة تعتيم الخلفية لتبدو كل الحروف بوضوح */
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom,
-      rgba(0, 25, 45, 0.4) 0%,
-      rgba(0, 25, 45, 0.75) 50%,
-      rgba(0, 25, 45, 0.95) 100%);
-  z-index: 1;
-}
-
 .image-content {
   position: absolute;
   left: 20px;
@@ -91,6 +77,7 @@ body,
   text-align: center;
   /* مسافة متناسقة بين العنوان والفقرة */
   color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
 }
 
 .image-content p {
@@ -104,6 +91,7 @@ body,
   color: #ffffff;
   opacity: 1;
   text-align: center;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
 }
 
 /* Logo */
@@ -113,11 +101,13 @@ body,
 
   top: 55px;
   left: 50px;
-
   color: white;
 
   font-size: 16px;
+
   font-weight: bold;
+
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
 
   z-index: 2;
 }
@@ -325,6 +315,42 @@ body,
 
 .field input:focus {
   border-color: #0786ad;
+}
+
+/* حقل كلمة المرور مع زر إظهار/إخفاء */
+.password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrap input {
+  padding-left: 40px;
+}
+
+.register .toggle-eye {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.15s ease;
+}
+
+.register .toggle-eye:hover,
+.register .toggle-eye:focus-visible {
+  color: #0786ad;
+}
+
+.register .toggle-eye svg {
+  width: 16px;
+  height: 16px;
 }
 
 

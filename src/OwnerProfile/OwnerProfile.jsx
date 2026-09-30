@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import './OwnerProfile.css';
 import Navbar from '../components/Navbar';
-import { Link } from 'react-router-dom';
 import { apiFetch, normalizeUser } from '../services/api.js';
+import { notifyUserChange } from '../state/currentUser.js';
+import defaultAvatar from '../components/default-avatar.svg';
+import LandingFooter from '../components/LandingFooter';
 import {
     FaBuilding, FaHome, FaKey, FaUsers, FaPlus, FaEdit,
-    FaCheckCircle, FaUserCheck, FaCalendarAlt, FaEnvelope, FaPhoneAlt,
-    FaFacebookF, FaInstagram, FaLinkedinIn, FaSpinner
+    FaCheckCircle, FaUserCheck, FaCalendarAlt, FaSpinner
 } from 'react-icons/fa';
 
 const OwnerProfile = ({
@@ -17,10 +18,11 @@ const OwnerProfile = ({
     onEditProfileClick,
     onLogoutClick,
     onAddPropertyClick,
-    onSearchClick,
-    onSavedClick
-}) => {
-    const [loading, setLoading] = useState(true);
+      onSearchClick,
+      onSavedClick,
+      onRequestsClick,
+  }) => {
+      const [loading, setLoading] = useState(true);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     const [userData, setUserData] = useState({
@@ -30,7 +32,7 @@ const OwnerProfile = ({
         whatsapp: currentUser?.whatsapp || '',
         role: currentUser?.role || 'مالك',
         joinedYear: currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2023',
-        avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'
+        avatar: currentUser?.avatar || defaultAvatar
     });
 
     const [statsData, setStatsData] = useState({
@@ -91,6 +93,7 @@ const OwnerProfile = ({
                         avatar: u.avatar
                     })
                 );
+                notifyUserChange();
             })
             .catch((err) => console.error("Error fetching profile:", err))
             .finally(() => setLoading(false));
@@ -152,9 +155,10 @@ const OwnerProfile = ({
                 onProfileClick={onProfileClick}
                 onChangePasswordClick={onChangePasswordClick}
                 onLogoutClick={onLogoutClick}
-                onSearchClick={onSearchClick}
-                onSavedClick={onSavedClick}
-            />
+                  onSearchClick={onSearchClick}
+                  onSavedClick={onSavedClick}
+                  onRequestsClick={onRequestsClick}
+              />
 
             {/* Main Area */}
             <main className="main-content">
@@ -271,61 +275,7 @@ const OwnerProfile = ({
             </main>
 
             {/* الفوتر */}
-            <footer className="footer-full">
-                <div className="footer-container">
-                    <div className="footer-col brand-col">
-                        <div className="footer-logo">
-                            <span className="logo-text-footer">بيتي <small>Bayti</small></span>
-                        </div>
-                        <p className="footer-desc">
-                            بيتي هي وجهتك الموثوقة لكل ما يتعلق بالعقارات في قطاع غزة. الجودة والسرعة والأمان شعارنا.
-                        </p>
-                    </div>
-
-                    <div className="footer-col">
-                        <h4>روابط سريعة</h4>
-                        <ul>
-                            <li><Link to="/home">الرئيسية</Link></li>
-                            <li><a href="#properties">العقارات</a></li>
-                            <li><a href="#about">من نحن</a></li>
-                            <li><a href="#how">كيف تعمل المنصة</a></li>
-                            <li><a href="#support">الدعم الفني</a></li>
-                        </ul>
-                    </div>
-
-                    <div className="footer-col">
-                        <h4>أنواع العقارات</h4>
-                        <ul>
-                            <li><a href="#apartments">شقق</a></li>
-                            <li><a href="#houses">منازل</a></li>
-                            <li><a href="#lands">أراضي</a></li>
-                            <li><a href="#offices">مكاتب</a></li>
-                            <li><a href="#stores">محلات</a></li>
-                            <li><a href="#warehouses">مخازن</a></li>
-                        </ul>
-                    </div>
-
-                    <div className="footer-col contact-col">
-                        <h4>تواصل معنا</h4>
-                        <p><FaEnvelope /> info@bayti.ps</p>
-                        <p><FaPhoneAlt /> 0598 123 456</p>
-                        <p><FaPhoneAlt /> 0598 123 456</p>
-
-                        <div className="social-links">
-                            <span>تابعنا على</span>
-                            <div className="social-icons">
-                                <a href="#fb"><FaFacebookF /></a>
-                                <a href="#insta"><FaInstagram /></a>
-                                <a href="#linkedin"><FaLinkedinIn /></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="footer-bottom">
-                    <p>© 2024 بيتي - جميع الحقوق محفوظة لقطاع غزة</p>
-                </div>
-            </footer>
+            <LandingFooter />
         </div>
     );
 };

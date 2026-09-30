@@ -1,6 +1,8 @@
-﻿import React, { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { apiFetch, resolveMediaUrl } from "../services/api";
+import { useStoredUser, useUserAvatar } from "../state/currentUser";
+import defaultAvatar from "../components/default-avatar.svg";
 import "./PropertyDetailsOwner.css";
 
 /**
@@ -424,6 +426,21 @@ const Icon = ({ name, size = 18 }) => {
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
             );
+        case "trash":
+            return (
+                <svg {...props}>
+                    <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                </svg>
+            );
+        case "edit":
+            return (
+                <svg {...props}>
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+            );
         case "whatsapp":
             return (
                 <svg {...props}>
@@ -678,6 +695,47 @@ function LoginPrompt({ open, onClose }) {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  مودال تأكيد الحذف (للمالك)                                                */
+/* -------------------------------------------------------------------------- */
+function DeleteConfirmDialog({ open, title, isDeleting, error, onCancel, onConfirm }) {
+    if (!open) return null;
+    return (
+        <div className="pdo-confirm" role="dialog" aria-modal="true">
+            <div className="pdo-confirm__backdrop" onClick={onCancel} />
+            <div className="pdo-confirm__box">
+                <h3 className="pdo-confirm__title">
+                    <Icon name="trash" size={20} />
+                    تأكيد الحذف
+                </h3>
+                <p className="pdo-confirm__text">
+                    هل أنت متأكد من حذف هذا الإعلان؟
+                    <br />
+                    "{title}" سيختفي من نتائج البحث ولا يمكن التراجع عن هذا الإجراء.
+                </p>
+
+                {error && <p className="pdo-confirm__error">{error}</p>}
+
+                <button
+                    className="pdo-btn pdo-btn--danger pdo-btn--block"
+                    onClick={onConfirm}
+                    disabled={isDeleting}
+                >
+                    <Icon name="trash" size={16} />
+                    {isDeleting ? "جاري الحذف..." : "حذف الإعلان"}
+                </button>
+                <button
+                    className="pdo-btn pdo-btn--outline pdo-btn--block"
+                    onClick={onCancel}
+                    disabled={isDeleting}
+                >
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  الصفحة الرئيسية                                                           */
 /* -------------------------------------------------------------------------- */
 export default function PropertyDetailsOwner() {
@@ -692,10 +750,62 @@ export default function PropertyDetailsOwner() {
     const [loginPromptOpen, setLoginPromptOpen] = useState(false);
     const [descExpanded, setDescExpanded] = useState(false);
 
+    /* هل العقار للمستخدم الحالي؟ المالك يرى أدواته، والباقي يرى نموذج التواصل */
+    const viewer = useStoredUser();
+    const viewerAvatar = useUserAvatar();
+    const viewerName = viewer?.name || viewer?.full_name || "مالك العقار";
+
+    /*
+     * إشارة أولى: مطابقة المعرّفات مباشرة (تعتمد على وجود owner.id في استجابة الـAPI).
+     * إشارة ثانية: مسار /property-owner/ — وهو مسار خاص بلوحة المالك، لا يُفتح منه
+     * شيء غير عقارات المستخدم نفسه، ويبقى صحيحاً بعد تحديث الصفحة (على عكس state).
+     * دور المستخدم يُشترطKnown فقط إذا كان محفوظاً، حتى لا تنكسر الحالة القديمة.
+     */
+    const matchesOwnerId =
+        viewer?.id != null &&
+        property?.owner?.id != null &&
+        String(viewer.id) === String(property.owner.id);
+
+    const viewerRole = viewer?.role || "";
+    const roleAllowsOwnerView =
+        !viewerRole || viewerRole.includes("مالك") || viewerRole === "owner";
+    const isOwnerRoute = location.pathname.startsWith("/property-owner/");
+
+    const isMyProperty = matchesOwnerId || (isOwnerRoute && roleAllowsOwnerView);
+
     /* حالة طلب الاهتمام: none | pending | accepted */
     const [interest, setInterest] = useState({ status: "none", phone: "" });
     const [submitting, setSubmitting] = useState(false);
     const [interestError, setInterestError] = useState("");
+
+    /* حذف العقار (للمالك فقط) */
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
+
+    const closeDelete = () => {
+        if (isDeleting) return;
+        setDeleteOpen(false);
+        setDeleteError("");
+    };
+
+    const confirmDelete = async () => {
+        setIsDeleting(true);
+        setDeleteError("");
+        try {
+            const res = await apiFetch(`/api/properties/${id}/`, { method: "DELETE" });
+            if (!res.ok && res.status !== 204) {
+                if (res.status === 403) throw new Error("ليس لديك صلاحية حذف هذا العقار");
+                if (res.status === 404) throw new Error("العقار غير موجود أصلًا");
+                throw new Error("فشل حذف العقار، يرجى المحاولة لاحقاً");
+            }
+            navigate("/home-owner", { replace: true });
+        } catch (err) {
+            setDeleteError(err.message);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     /* محاولة تحديث بيانات أكثر اكتمالاً من الـ API إن توفّر، دون إيقاف العرض عند الفشل */
     useEffect(() => {
@@ -717,7 +827,7 @@ export default function PropertyDetailsOwner() {
 
     /* جلب حالة الطلب الحالية (إن كان المستخدم مسجلاً وأرسل طلباً سابقاً) */
     useEffect(() => {
-        if (!isLoggedIn()) return undefined;
+        if (!isLoggedIn() || isMyProperty) return undefined;
         let active = true;
         (async () => {
             try {
@@ -732,7 +842,7 @@ export default function PropertyDetailsOwner() {
         return () => {
             active = false;
         };
-    }, [id]);
+    }, [id, isMyProperty]);
 
     /* أثناء "قيد المعالجة": فحص دوري لمعرفة إن وافق المالك */
     useEffect(() => {
@@ -889,18 +999,49 @@ export default function PropertyDetailsOwner() {
                         )}
                     </div>
 
-                    <ContactCard
-                        owner={property.owner}
-                        status={interest.status}
-                        phone={ownerPhone}
-                        submitting={submitting}
-                        error={interestError}
-                        onInterest={onInterest}
-                        onMessage={onMessage}
-                        onCall={onCall}
-                        onCancel={onCancel}
-                        onWhatsApp={onWhatsApp}
-                    />
+                    {isMyProperty ? (
+                        <aside className="pdo-owner-card">
+                            <div className="pdo-owner-card__profile">
+                                <img
+                                    className="pdo-owner-card__avatar"
+                                    src={viewerAvatar || defaultAvatar}
+                                    alt={viewerName}
+                                />
+                                <span className="pdo-owner-card__name">{viewerName}</span>
+                            </div>
+                            <div className="pdo-mine-badge">
+                                <Icon name="checkCircle" size={18} />
+                                <span>هذا العقار من عقاراتك</span>
+                            </div>
+                            <button
+                                className="pdo-btn pdo-btn--primary pdo-btn--block"
+                                onClick={() => navigate(`/property-edit/${id}`)}
+                            >
+                                <Icon name="edit" size={16} />
+                                تعديل الإعلان
+                            </button>
+                            <button
+                                className="pdo-btn pdo-btn--danger pdo-btn--block"
+                                onClick={() => setDeleteOpen(true)}
+                            >
+                                <Icon name="trash" size={16} />
+                                حذف الإعلان
+                            </button>
+                        </aside>
+                    ) : (
+                        <ContactCard
+                            owner={property.owner}
+                            status={interest.status}
+                            phone={ownerPhone}
+                            submitting={submitting}
+                            error={interestError}
+                            onInterest={onInterest}
+                            onMessage={onMessage}
+                            onCall={onCall}
+                            onCancel={onCancel}
+                            onWhatsApp={onWhatsApp}
+                        />
+                    )}
                 </section>
             </main>
 
@@ -913,6 +1054,15 @@ export default function PropertyDetailsOwner() {
             />
 
             <LoginPrompt open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} />
+
+            <DeleteConfirmDialog
+                open={deleteOpen}
+                title={property.title}
+                isDeleting={isDeleting}
+                error={deleteError}
+                onCancel={closeDelete}
+                onConfirm={confirmDelete}
+            />
         </div>
     );
 }
