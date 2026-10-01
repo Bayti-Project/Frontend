@@ -15,6 +15,7 @@ import EditProfile from "./EditProfile/EditProfile";
 import Home from "./HomeVisitor/HomeVisitor";
 import HomeTenant from "./HomeTenant/HomeTenant";
 import OwnerHome from "./OwnerHome/OwnerHome";
+import OwnerDashboard from "./ownerDashboard/OwnerDashboard";
 import PropertyEditPage from "./PropertyEditPage/PropertyEditPage";
 import AddPropertyPage from "./AddPropertyPage/AddPropertyPage";
 import AddPropertyPhotosPage from "./AddPropertyPhotosPage/AddPropertyPhotosPage";
@@ -28,6 +29,7 @@ import SearchPage from "./Search/search";
 import PropertySearchPage from "./PropertySearch/PropertySearch";
 import MyRequests from "./myRequests/my requests.jsx";
 import Notifications from "./notifications/Notifications.jsx";
+import OwnerRequests from "./ownerRequests/OwnerRequests.jsx";
 
 
 const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
@@ -81,7 +83,12 @@ export default function App() {
   const navProps = {
     onPropertyClick: (id) => navigate(`/property/${id}`),
     onSearchClick: () => navigate("/search"),
-    onRequestsClick: () => navigate("/my-requests"),
+    /* صفحة الطلبات تختلف حسب دور المستخدم: للمالك "طلبات الاهتمام"، وللمستأجر "طلباتي" */
+    onRequestsClick: () => {
+      const role = user.role || "";
+      const isOwner = role.includes("مالك") || role === "owner";
+      navigate(isOwner ? "/owner-requests" : "/my-requests");
+    },
     onSavedClick: () => navigate("/saved"),
     onHomeClick: () => {
       setView("password");
@@ -210,8 +217,32 @@ export default function App() {
           </RequireAuth>
         }
       />
+      <Route
+        path="/owner-requests"
+        element={
+          <RequireAuth>
+            <div className="page" dir="rtl">
+              <Navbar {...navProps} />
+              <OwnerRequests />
+              <LandingFooter />
+            </div>
+          </RequireAuth>
+        }
+      />
       <Route path="/search" element={<SearchPage {...navProps} />} />
       <Route path="/property-search" element={<PropertySearchPage {...navProps} />} />
+      <Route
+        path="/owner-dashboard"
+        element={
+          <div className="page">
+            <Navbar {...navProps} />
+            <main className="main">
+              <OwnerDashboard />
+            </main>
+            <LandingFooter />
+          </div>
+        }
+      />
       <Route
         path="/home-owner"
         element={

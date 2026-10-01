@@ -325,7 +325,7 @@ body {
 }
 
 .property-item,
-.request-item {
+.op-request-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -346,13 +346,13 @@ body {
 }
 
 .prop-details h4,
-.request-user h4 {
+.op-request-user h4 {
     margin: 0;
     font-size: 0.82rem;
 }
 
 .prop-details p,
-.request-user p {
+.op-request-user p {
     margin: 0;
     font-size: 0.75rem;
     color: #64748b;
@@ -364,31 +364,49 @@ body {
     color: #0f172a;
 }
 
-.request-item {
+.op-request-item {
     gap: 0.5rem;
+    /* صف واحد: الصورة والاسم والأزرار ما ينزلوا لسطر تاني */
+    flex-wrap: nowrap;
 }
 
-.request-user {
+.op-request-user {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    /* النص بياخد المساحة الفاضية والأزرار ما بتتنزّل */
+    flex: 1;
+    min-width: 0;
 }
 
-.req-avatar {
+.op-request-user > div {
+    min-width: 0;
+}
+
+.op-request-user h4,
+.op-request-user p,
+.op-req-date {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.op-request-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.3rem;
+}
+
+.op-req-avatar {
     width: 30px;
     height: 30px;
     border-radius: 50%;
     object-fit: cover;
 }
 
-.req-date {
+.op-req-date {
     font-size: 0.7rem;
     color: #94a3b8;
-}
-
-.request-actions {
-    display: flex;
-    gap: 0.3rem;
 }
 
 .btn-accept {
@@ -507,8 +525,21 @@ body {
         padding: 0.6rem 0.4rem;
     }
 
-    .property-item,
-    .request-item {
-        flex-wrap: wrap;
+    /* الطلب يضل صف واحد على الموبايل، بس القبل والرفض يصغروا */
+    .btn-accept,
+    .btn-reject {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
     }
+}
+
+/* ??? ??? ?????? ??????? */
+.avatar-upload-error {
+    margin: 8px 0 0;
+    max-width: 190px;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    font-weight: 600;
+    color: #dc2626;
+    text-align: center;
 }

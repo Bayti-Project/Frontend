@@ -55,7 +55,9 @@ const mockProperty = {
 
 /* -------------------------------------------------------------------------- */
 /*  طلب الاهتمام (Interest request)                                            */
-/*  ⚠️ عدّل هذا المسار وشكل الاستجابة ليطابق الـ Backend عندك                   */
+/*  ⚠️ المسار غير معتمد من الـ Backend بعد — كل المسارات المرشحة ترجع 404      */
+/*  (`/api/properties/{id}/interest/` و `/api/interests/` و `/api/requests/`)    */
+/*  عدّل هذا المسار وشكل الاستجابة ليطابق الـ Backend عندك                      */
 /*  POST   → إرسال طلب اهتمام                                                  */
 /*  GET    → جلب حالة الطلب: { status: "pending" | "accepted", owner_phone }    */
 /*  DELETE → إلغاء الطلب                                                       */
@@ -64,6 +66,21 @@ const interestUrl = (propertyId) => `/api/properties/${propertyId}/interest/`;
 const INTEREST_POLL_MS = 15000;
 
 const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
+
+/* رسائل عربية واضحة بدل رسالة عامة واحدة، حتى يبقى سبب الفشل ظاهراً للمستخدم */
+function describeInterestError(status, data) {
+    const serverMsg =
+        (typeof data?.detail === "string" && data.detail) ||
+        (typeof data?.message === "string" && data.message) ||
+        "";
+    if (serverMsg) return serverMsg;
+    if (status === 401) return "انتهت الجلسة، يرجى تسجيل الدخول من جديد.";
+    if (status === 403) return "لا تملك صلاحية إرسال طلب اهتمام على هذا العقار.";
+    if (status === 404) return "خدمة طلب الاهتمام غير متاحة حالياً، جرّبتو لاحقاً.";
+    if (status === 409) return "لديك طلب اهتمام على هذا العقار مسبقاً.";
+    if (status >= 500) return "خطأ في الخادم، حاول مرة أخرى بعد قليل.";
+    return "تعذر إرسال الطلب، حاول مرة أخرى.";
+}
 
 function parseInterest(data) {
     const raw = String(data?.status || "").toLowerCase();
@@ -524,17 +541,22 @@ function Lightbox({ images, index, onClose, onNext, onPrev }) {
 /* -------------------------------------------------------------------------- */
 /*  فورم التواصل (3 حالات: قبل الطلب / قيد المعالجة / تمت الموافقة)              */
 /* -------------------------------------------------------------------------- */
-function OwnerRow({ owner }) {
+function OwnerRow({ name, avatar }) {
     return (
         <div className="pdo-owner-card__profile">
-            <img className="pdo-owner-card__avatar" src={owner.avatar} alt={owner.name} />
-            <span className="pdo-owner-card__name">{owner.name}</span>
+            <img
+                className="pdo-owner-card__avatar"
+                src={avatar || defaultAvatar}
+                alt={name}
+            />
+            <span className="pdo-owner-card__name">{name}</span>
         </div>
     );
 }
 
 function ContactCard({
-    owner,
+    viewerName,
+    viewerAvatar,
     status,
     phone,
     submitting,
@@ -548,7 +570,7 @@ function ContactCard({
     /* الحالة 2: تم إرسال الطلب وبانتظار موافقة المالك */
     if (status === "pending") {
         return (
-            <aside className="pdo-owner-card">
+            <aside className="pdo-owner-card pdo-owner-card--success">
                 <div className="pdo-contact-success">
                     <div className="pdo-contact-success__badge">
                         <span className="pdo-contact-success__badge-inner">
@@ -561,7 +583,7 @@ function ContactCard({
                     </p>
                 </div>
 
-                <OwnerRow owner={owner} />
+                <OwnerRow name={viewerName} avatar={viewerAvatar} />
 
                 <div className="pdo-contact-locked">
                     <Icon name="lock" size={22} />
@@ -569,8 +591,8 @@ function ContactCard({
                 </div>
 
                 <button className="pdo-btn pdo-btn--disabled" disabled>
-                    طلب قيد المعالجة
                     <Icon name="clock" size={16} />
+                    طلب قيد المعالجة
                 </button>
             </aside>
         );
@@ -590,7 +612,7 @@ function ContactCard({
                     </div>
                 </div>
 
-                <OwnerRow owner={owner} />
+                <OwnerRow name={viewerName} avatar={viewerAvatar} />
 
                 <hr className="pdo-divider pdo-divider--tight" />
 
@@ -619,7 +641,7 @@ function ContactCard({
     /* الحالة 1: الفورم الافتراضي */
     return (
         <aside className="pdo-owner-card">
-            <OwnerRow owner={owner} />
+            <OwnerRow name={viewerName} avatar={viewerAvatar} />
 
             <button className="pdo-btn pdo-btn--primary" onClick={onInterest} disabled={submitting}>
                 {submitting ? "جاري الإرسال..." : "أنا مهتم"}
@@ -628,7 +650,12 @@ function ContactCard({
 
             {error && <p className="pdo-contact-error">{error}</p>}
 
-            <button className="pdo-btn pdo-btn--outline pdo-btn--block" onClick={onMessage}>
+            <button
+                className="pdo-btn pdo-btn--outline pdo-btn--block"
+                onClick={onMessage}
+                disabled
+                title="يتاح بعد موافقة المالك على طلبك"
+            >
                 <Icon name="message" size={16} />
                 ارسال رسالة عبر الرسائل
             </button>
@@ -885,12 +912,17 @@ export default function PropertyDetailsOwner() {
         setInterestError("");
         try {
             const res = await apiFetch(interestUrl(id), { method: "POST" });
-            if (!res.ok) throw new Error("request failed");
             const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                console.error("[interest] فشل الإرسال", res.status, data);
+                setInterestError(describeInterestError(res.status, data));
+                return;
+            }
             const parsed = parseInterest(data);
             setInterest(parsed.status === "none" ? { status: "pending", phone: "" } : parsed);
-        } catch {
-            setInterestError("تعذر إرسال الطلب، حاول مرة أخرى.");
+        } catch (err) {
+            console.error("[interest] استثناء أثناء الإرسال", err);
+            setInterestError("تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.");
         } finally {
             setSubmitting(false);
         }
@@ -1030,7 +1062,8 @@ export default function PropertyDetailsOwner() {
                         </aside>
                     ) : (
                         <ContactCard
-                            owner={property.owner}
+                            viewerName={viewerName}
+                            viewerAvatar={viewerAvatar}
                             status={interest.status}
                             phone={ownerPhone}
                             submitting={submitting}

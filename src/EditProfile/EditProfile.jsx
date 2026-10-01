@@ -3,7 +3,7 @@ import { FaCheckCircle, FaUpload, FaSpinner } from "react-icons/fa";
 import Navbar from "../components/Navbar";
 import LandingFooter from "../components/LandingFooter";
 import { mapApiError, apiFetch, resolveMediaUrl, normalizeUser } from "../services/api.js";
-import { notifyUserChange } from "../state/currentUser.js";
+import { notifyUserChange, persistUser } from "../state/currentUser.js";
 import defaultAvatar from "../components/default-avatar.svg";
 import "../styles/style.css";
 import "./EditProfile.css";
@@ -114,8 +114,9 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
     }
 
     apiFetch("/api/auth/profile/", {
-      method: "PATCH", // أو "PUT" حسب إعدادات السيرفر
-      body: formData,
+      // السيرفر يسمح بـ GET, PUT, HEAD, OPTIONS فقط — بدون PATCH
+      method: "PUT",
+      formData,
     })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
@@ -126,12 +127,27 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
         }
         return data;
       })
-      .then((data) => {
+      .then(async (data) => {
         if (!data) return;
         setSubmitting(false);
 
         const u = normalizeUser(data);
-        const updatedAvatar = resolveMediaUrl(u.avatar || data.profile_image) || avatar;
+        let updatedAvatar = resolveMediaUrl(
+          data?.profile_image || data?.avatar || data?.user?.profile_image || data?.user?.avatar || ''
+        );
+
+        // بعض الواجهات ما بترجّع الصورة بردّ PUT، فبنجيب الرابط من GET.
+        // مهم: ما بنكتب رابط data: المحلي بالـlocalStorage لأنه ما بيعيش بعد التحديث
+        if (!updatedAvatar && avatarFile) {
+          const refetch = await apiFetch("/api/auth/profile/");
+          if (refetch.ok) {
+            const fresh = await refetch.json().catch(() => ({}));
+            updatedAvatar = resolveMediaUrl(
+              fresh?.profile_image || fresh?.avatar || fresh?.user?.profile_image || fresh?.user?.avatar || ''
+            );
+          }
+        }
+        if (!updatedAvatar) updatedAvatar = avatar || "";
 
         const updatedData = {
           name: u.name || name.trim(),
@@ -143,11 +159,7 @@ export default function EditProfile({ currentUser, onSave, onCancel, onHomeClick
         };
 
         // تحديث البيانات في LocalStorage
-        const saved = JSON.parse(localStorage.getItem('bayti_user') || '{}');
-        localStorage.setItem(
-          'bayti_user',
-          JSON.stringify({ ...saved, ...updatedData })
-        );
+        persistUser(updatedData);
         notifyUserChange();
 
         setSavedData(updatedData);

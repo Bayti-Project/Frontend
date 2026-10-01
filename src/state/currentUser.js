@@ -24,6 +24,18 @@ export function notifyUserChange() {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
+// يحدّث بيانات المستخدم المحفوظة ويخبر النافبار بالتغيير
+export function persistUser(patch) {
+  const next = { ...(readUser() || {}), ...patch };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    return next;
+  }
+  notifyUserChange();
+  return next;
+}
+
 export function useStoredUser() {
   const [user, setUser] = useState(readUser);
 

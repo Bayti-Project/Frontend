@@ -118,7 +118,6 @@ export default function PropertyEditPage() {
         balcony: false,
         sharedPool: false,
         centralAC: false,
-        garden: false,
         main_grid: false,
         solar: false,
         generator: false,
@@ -482,7 +481,6 @@ export default function PropertyEditPage() {
                                 <Checkbox label="موقف سيارات" checked={features.parking} onChange={() => toggleFeature("parking")} />
                                 <Checkbox label="تكييف مركزي" checked={features.centralAC} onChange={() => toggleFeature("centralAC")} />
                                 <Checkbox label="صالة رياضية" checked={features.gym} onChange={() => toggleFeature("gym")} />
-                                <Checkbox label="حديقة" checked={features.garden} onChange={() => toggleFeature("garden")} />
                             </div>
                             <h2>الكهرباء</h2>
                             <div className="edit-features-grid">

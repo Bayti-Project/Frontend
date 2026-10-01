@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import './OwnerProfile.css';
 import Navbar from '../components/Navbar';
-import { apiFetch, normalizeUser } from '../services/api.js';
-import { notifyUserChange } from '../state/currentUser.js';
+import { apiFetch, normalizeUser, resolveMediaUrl } from '../services/api.js';
+import { notifyUserChange, persistUser } from '../state/currentUser.js';
 import defaultAvatar from '../components/default-avatar.svg';
 import LandingFooter from '../components/LandingFooter';
 import {
@@ -24,6 +24,7 @@ const OwnerProfile = ({
   }) => {
       const [loading, setLoading] = useState(true);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [uploadError, setUploadError] = useState('');
 
     const [userData, setUserData] = useState({
         name: currentUser?.name || 'أحمد محمد',
@@ -104,23 +105,46 @@ const OwnerProfile = ({
         const file = e.target.files[0];
         if (!file) return;
 
+        setUploadError('');
         const formData = new FormData();
         formData.append('avatar', file);
+        formData.append('profile_image', file);
 
         setUploadingAvatar(true);
         try {
             const res = await apiFetch('/api/auth/profile/', {
-                method: 'PATCH', // أو POST حسب مسار الـ API الخاص برفع الصور لديك
-                body: formData
+                // السيرفر يسمح بـ GET, PUT, HEAD, OPTIONS فقط — بدون PATCH
+                method: 'PUT',
+                formData
             });
 
-            if (res.ok) {
-                const data = await res.json();
-                const u = normalizeUser(data);
-                setUserData((prev) => ({ ...prev, avatar: u.avatar || prev.avatar }));
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err?.detail || `فشل الرفع (${res.status})`);
             }
+
+            const data = await res.json().catch(() => ({}));
+            let resolved = resolveMediaUrl(
+                data?.profile_image || data?.avatar || data?.user?.profile_image || data?.user?.avatar || ''
+            );
+
+            // بعض الواجهات ما بترجّع الصورة بالرد، فبنجيب الرابط من طلب GET
+            if (!resolved) {
+                const refetch = await apiFetch('/api/auth/profile/');
+                if (refetch.ok) {
+                    const fresh = await refetch.json().catch(() => ({}));
+                    resolved = resolveMediaUrl(fresh?.profile_image || fresh?.avatar || '');
+                }
+            }
+
+            if (!resolved) throw new Error('لم يُرجع الخادم رابط الصورة');
+
+            setUserData((prev) => ({ ...prev, avatar: resolved }));
+            // نحدّث localStorage حتىorefّ Navbar الصورة الجديدة فوراً
+            persistUser({ avatar: resolved });
         } catch (err) {
             console.error("Avatar upload failed:", err);
+            setUploadError('تعذّر رفع الصورة، حاول مرة أخرى.');
         } finally {
             setUploadingAvatar(false);
         }
@@ -190,6 +214,9 @@ const OwnerProfile = ({
                                         onChange={handleAvatarChange}
                                         style={{ display: 'none' }}
                                     />
+                                    {uploadError && (
+                                        <p className="avatar-upload-error">{uploadError}</p>
+                                    )}
                                 </div>
                                 <div className="user-details">
                                     <h2>{userData.name} <FaCheckCircle className="verified-badge" /></h2>
@@ -251,16 +278,16 @@ const OwnerProfile = ({
                                 </div>
                                 <div className="card-body">
                                     {displayRequests.map((req) => (
-                                        <div key={req.id} className="request-item">
-                                            <div className="request-user">
-                                                <img src={req.avatar} alt={req.name} className="req-avatar" />
+                                        <div key={req.id} className="op-request-item">
+                                            <div className="op-request-user">
+                                                <img src={req.avatar} alt={req.name} className="op-req-avatar" />
                                                 <div>
                                                     <h4>{req.name}</h4>
                                                     <p>{req.property}</p>
-                                                    <span className="req-date">{req.date}</span>
+                                                    <span className="op-req-date">{req.date}</span>
                                                 </div>
                                             </div>
-                                            <div className="request-actions">
+                                            <div className="op-request-actions">
                                                 <button className="btn-accept">قبول</button>
                                                 <button className="btn-reject">رفض</button>
                                             </div>

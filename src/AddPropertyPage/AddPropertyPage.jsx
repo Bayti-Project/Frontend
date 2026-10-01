@@ -64,7 +64,6 @@ const initialFeatures = {
     sharedPool: false,
     parking: false,
     balcony: true,
-    garden: false,
     centralAC: true,
     gym: false,
     main_grid: false,
@@ -413,10 +412,6 @@ export default function AddPropertyPage() {
                                 <label className="ap-checkbox">
                                     <input type="checkbox" checked={features.balcony} onChange={() => toggleFeature("balcony")} />
                                     شرفة / تهوية
-                                </label>
-                                <label className="ap-checkbox">
-                                    <input type="checkbox" checked={features.garden} onChange={() => toggleFeature("garden")} />
-                                    حديقة
                                 </label>
                                 <label className="ap-checkbox">
                                     <input type="checkbox" checked={features.centralAC} onChange={() => toggleFeature("centralAC")} />

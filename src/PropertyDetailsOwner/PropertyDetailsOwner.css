@@ -217,10 +217,10 @@
 
 .pdo-btn--disabled,
 .pdo-btn--disabled:disabled {
-    background: #b9c2ce;
-    color: var(--pdo-white);
-    width: 100%;
-    opacity: 1;
+  background: #8fa1b8;
+  color: var(--pdo-white);
+  width: 100%;
+  opacity: 1;
 }
 
 .pdo-btn--disabled:hover {
@@ -530,9 +530,24 @@
     margin-top: 30px;
 }
 
+/* كارت نجاح إرسال طلب الاهتمام: خط تدرج أخضر إلى تركوازي أعلى الكارت */
+.pdo-owner-card--success {
+  position: relative;
+  overflow: hidden;
+}
+
+.pdo-owner-card--success::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #22c55e, #14b8a6);
+}
+
 .pdo-mine-badge {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
     gap: 8px;
     padding: 10px 14px;
     border-radius: var(--pdo-radius-md);
@@ -626,6 +641,8 @@
     height: 48px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid var(--pdo-blue, #2F6FED);
+    box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.14);
 }
 
 .pdo-owner-card__name {

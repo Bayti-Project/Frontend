@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   apiFetch,
@@ -9,6 +9,23 @@ import {
   GOVERNORATE_LABELS,
 } from "../services/api";
 import "./PropertyEditPage.css";
+
+/* ---------- خريطة الميزات: state key ← اسم الحقل بالـBackend ----------
+   بنستخدم نفس الخريطة للتحميل والحفظ عشان ما يبقا في حقل ناسيه */
+const FEATURE_FIELD_MAP = {
+  main_grid: "has_main_grid",
+  solar: "has_solar",
+  generator: "has_generator_line",
+  tank: "has_water_tank",
+  well: "has_private_well",
+  furnished: "is_furnished",
+  elevator: "has_elevator",
+  balcony: "has_balcony",
+  parking: "has_parking",
+  centralAC: "has_central_ac",
+  sharedPool: "has_shared_pool",
+  gym: "has_gym",
+};
 
 /* ---------- Icons ---------- */
 function ImagePlusIcon() {
@@ -113,12 +130,12 @@ export default function PropertyEditPage() {
     // Features state
     const [features, setFeatures] = useState({
         furnished: false,
+        elevator: false,
         parking: false,
         gym: false,
         balcony: false,
         sharedPool: false,
         centralAC: false,
-        garden: false,
         main_grid: false,
         solar: false,
         generator: false,
@@ -126,9 +143,11 @@ export default function PropertyEditPage() {
         well: false,
     });
 
-    // Photos state
+    //Photos state
     const [photoPreviews, setPhotoPreviews] = useState([]);
     const [photoToDelete, setPhotoToDelete] = useState(null);
+    // معرّفات الصور اللي موجودة على السيرفر وقت التحميل — لحساب image_ids_to_delete
+    const [serverImageIds, setServerImageIds] = useState([]);
 
     // API & UI state
     const [loading, setLoading] = useState(false);
@@ -161,23 +180,23 @@ export default function PropertyEditPage() {
                 if (data.images && Array.isArray(data.images)) {
                     setPhotoPreviews(
                         data.images.map((img) => ({
+                            id: typeof img === "string" ? null : img.id ?? null,
                             url: resolveMediaUrl(typeof img === "string" ? img : img.image),
                             isNew: false,
                             file: null,
                         }))
                     );
+                    // نحفظ المعرّفات عشان نعرف شو اللي انحذف وقت الحفظ
+                    setServerImageIds(
+                        data.images
+                            .map((img) => (typeof img === "string" ? null : img.id ?? null))
+                            .filter((id) => id !== null && id !== undefined)
+                    );
                 }
 
-                // تحميل ميزات العقار المخزنة من الـ Backend (حقول has_*)
-                const HAS_FIELD_MAP = {
-                    has_main_grid: "main_grid",
-                    has_solar: "solar",
-                    has_generator_line: "generator",
-                    has_water_tank: "tank",
-                    has_private_well: "well",
-                };
+                // تحميل ميزات العقار المخزنة من الـ Backend (نفس خريطة الحفظ)
                 const loadedFeatures = {};
-                Object.entries(HAS_FIELD_MAP).forEach(([apiKey, stateKey]) => {
+                Object.entries(FEATURE_FIELD_MAP).forEach(([stateKey, apiKey]) => {
                     if (data[apiKey]) loadedFeatures[stateKey] = true;
                 });
                 if (data.features && typeof data.features === "object" && !Array.isArray(data.features)) {
@@ -253,12 +272,16 @@ export default function PropertyEditPage() {
                 }
             });
 
-            // حفظ ميزات الكهرباء والمياه مباشرة بالحقول الفعلية للـ Backend
-            formData.append("has_main_grid", features.main_grid ? "true" : "false");
-            formData.append("has_solar", features.solar ? "true" : "false");
-            formData.append("has_generator_line", features.generator ? "true" : "false");
-            formData.append("has_water_tank", features.tank ? "true" : "false");
-            formData.append("has_private_well", features.well ? "true" : "false");
+            // الصور المحذوفة من الواجهة — نقارن معرّفات السيرفر باللي باقية
+            const keptIds = new Set(photoPreviews.map((item) => item.id).filter(Boolean));
+            serverImageIds
+                .filter((id) => !keptIds.has(id))
+                .forEach((id) => formData.append("image_ids_to_delete", id));
+
+            // كل الميزات — نفس الخريطة المستخدمة بالتحميل
+            Object.entries(FEATURE_FIELD_MAP).forEach(([stateKey, apiKey]) => {
+                formData.append(apiKey, features[stateKey] ? "true" : "false");
+            });
 
             // مسار احتياطي إذا كان الـ Backend يعتمد على النصوص المفصولة بفواصل
             const electricity = ["main_grid", "solar", "generator"].filter((k) => features[k]);
@@ -272,8 +295,16 @@ export default function PropertyEditPage() {
             });
 
             if (!response.ok) {
+                if (response.status === 403) {
+                    throw new Error("ما عندك صلاحية تعدّل على هاد العقار — لازم يكون العقار بحسابك");
+                }
+                if (response.status === 401) {
+                    throw new Error("انتهت الجلسة، سجّل دخولك من جديد وحاول");
+                }
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.detail || errorData.message || "فشل تحديث البيانات");
+                const detail = errorData.detail || errorData.message || "فشل تحديث البيانات";
+                // لو الرد إنجليزي، نغلّفه بجملة عربية مفهومة
+                throw new Error(/^[\x20-\x7E]+$/.test(detail) ? `تعذّر الحفظ: ${detail}` : detail);
             }
 
             setShowSaved(true);
@@ -477,12 +508,12 @@ export default function PropertyEditPage() {
                             <h2>مميزات العقار</h2>
                             <div className="edit-features-grid">
                                 <Checkbox label="بلكونة" checked={features.balcony} onChange={() => toggleFeature("balcony")} />
+                                <Checkbox label="مصعد" checked={features.elevator} onChange={() => toggleFeature("elevator")} />
                                 <Checkbox label="مفروش" checked={features.furnished} onChange={() => toggleFeature("furnished")} />
                                 <Checkbox label="مسبح مشترك" checked={features.sharedPool} onChange={() => toggleFeature("sharedPool")} />
                                 <Checkbox label="موقف سيارات" checked={features.parking} onChange={() => toggleFeature("parking")} />
                                 <Checkbox label="تكييف مركزي" checked={features.centralAC} onChange={() => toggleFeature("centralAC")} />
                                 <Checkbox label="صالة رياضية" checked={features.gym} onChange={() => toggleFeature("gym")} />
-                                <Checkbox label="حديقة" checked={features.garden} onChange={() => toggleFeature("garden")} />
                             </div>
                             <h2>الكهرباء</h2>
                             <div className="edit-features-grid">

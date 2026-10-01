@@ -57,12 +57,19 @@ button {
   justify-content: space-between !important;
   direction: rtl !important;
   width: 100% !important;
-  padding-block: 10px !important;
-  padding-inline: 44px 24px !important;
+  padding-block: 4px !important;
+  /* بادنج متماثل من الجهتين — الشكل يطلع متوازن */
+  padding-inline: 32px !important;
   box-sizing: border-box !important;
   position: relative !important;
   background-color: #ffffff !important;
   border-bottom: 1px solid var(--border) !important;
+}
+
+/* الشعار وActions ما يتمددوا — القائمة تاخد المساحة الفاضية */
+.site-header > .logo,
+.site-header > .header-actions {
+  flex: 0 0 auto !important;
 }
 
 /* 2. الشعار (أقصى اليمين) */
@@ -80,16 +87,29 @@ button {
 }
 
 .logo .logo-img {
-  height: 40px;
+  /* اللوجو تكبّر من 40px إلى 52px، و padding-block نقصان 10px → 4px
+     عشان مجموع الارتفاع يضل نفسه (52+4+4 = 40+10+10 = 60px) وما يكبر النافبار */
+  height: 52px;
   width: auto;
   display: block;
 }
 
-/* 3. حاوية القائمة (بالمنتصف تماماً) */
+/* 3. حاوية القائمة — تتوسّط بين اللوجو والأزرار
+   بدل left: 50% + translateX (توسيط على عرض الشاشة كله)
+   هاي بتتوسّط على المساحة الحقيقية الفاضية */
 .site-header .nav-container {
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  /* إلغاء max-width/margin اللي بيجوا من .nav-container العام في OwnerProfile.css
+     (تصادم أسماء — نفس المشكلة اللي صار متسابت قبل) */
+  max-width: none !important;
+  width: auto !important;
+  margin: 0 !important;
 }
 
 .main-nav {
@@ -162,6 +182,29 @@ button {
 .icon-btn:hover {
   background: #f1f5f9;
   color: var(--navy);
+}
+
+/* زر القائمة المنسدلة — مخفي على الديسكتوب */
+.mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #4a5568;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.mobile-toggle:hover {
+  background: #f1f5f9;
+  color: var(--navy);
+  border-color: #cbd5e1;
 }
 
 .site-header .avatar {
@@ -739,13 +782,74 @@ button {
 }
 
 @media (max-width: 860px) {
-  .main-nav {
-    display: none;
+  .site-header {
+    padding-block: 12px !important;
+    padding-inline: 20px !important;
   }
 
-  .site-header {
-    padding-block: 12px;
-    padding-inline: 32px 20px;
+  /* زر القائمة بيظهر بدل الشريط الأفقي */
+  .mobile-toggle {
+    display: flex !important;
+  }
+
+  /* حاوية القائمة بتصير البانر المنسدلة تحت الهيدر */
+  .site-header .nav-container {
+    position: absolute !important;
+    top: 100% !important;
+    left: 16px !important;
+    right: 16px !important;
+    display: block !important;
+    flex: none !important;
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    z-index: 40;
+  }
+
+  .site-header .main-nav {
+    display: none !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    margin: 8px 0 0 !important;
+    padding: 8px !important;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 16px 36px rgba(22, 36, 63, 0.16);
+  }
+
+  .site-header .main-nav.is-open {
+    display: flex !important;
+  }
+
+  .site-header .main-nav li {
+    width: 100%;
+  }
+
+  .site-header .main-nav a {
+    display: block;
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 0.94rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    transition: background-color 0.18s ease, color 0.18s ease;
+  }
+
+  .site-header .main-nav a:hover {
+    background: #f3f6fc;
+  }
+
+  .site-header .main-nav a.active {
+    background: #f3f6fc;
+    color: var(--navy);
+    font-weight: 700;
+  }
+
+  /* الخط المتحرك ما بينفع بالترتيب العمودي */
+  .site-header .main-nav a.active::after {
+    display: none;
   }
 
   .footer-grid {
