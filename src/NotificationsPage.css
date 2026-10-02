@@ -1,0 +1,249 @@
+/* =====================================================================
+   NotificationsPage.css
+   -----------------------------------------------------------------
+   الـ CSS الخاص حصراً بصفحة "الإشعارات" (NotificationsPage.jsx).
+   يستخدم مجموعة ألوان مستقلة (--np-*) خاصة بهذه الصفحة فقط، ولا
+   يتعارض مع باقي الصفحات. الهيدر والفوتر يعيدان استخدام SavedHeader
+   و SavedFooter.
+
+   يُستورد داخل NotificationsPage.jsx:
+     import "./NotificationsPage.css";
+   ===================================================================== */
+
+.np-page{
+  --np-navy: #022747;
+  --np-accent: #0282AD;
+  --np-accent-bg: #E8F4F8;
+  --np-ink: #111F2E;
+  --np-muted: #6B7280;
+  --np-line: #E9EAEB;
+  --np-success: #16A34A;
+  --np-success-bg: #EAF8F0;
+  --np-warning: #EAB308;
+  --np-warning-bg: #FEF7E0;
+  --np-danger: #EF4444;
+  --np-danger-bg: #FEECEC;
+
+  flex:1;
+  background:#fff;
+  padding: 48px 20px 88px;
+  font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+  color: var(--np-ink);
+}
+.np-shell{
+  max-width:1236px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap:32px;
+  align-items:start;
+}
+
+/* ---------- الفلاتر ---------- */
+.np-filters{
+  border:1px solid var(--np-line);
+  border-radius:16px;
+  padding:20px;
+  background:#fff;
+}
+.np-filters-title{
+  margin:0 0 12px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--np-line);
+  font-size:14px;
+  font-weight:700;
+  color: var(--np-accent);
+}
+.np-filters-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.np-filter{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 14px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color: var(--np-muted);
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  text-align:right;
+  transition: background .15s, color .15s;
+}
+.np-filter:hover{ background:#F5F8FA; }
+.np-filter-icon{ display:inline-flex; width:24px; justify-content:center; flex:none; }
+.np-filter-label{ flex:1; }
+.np-filter-count{
+  min-width:22px;
+  height:22px;
+  padding:0 6px;
+  border-radius:999px;
+  background:#EEF1F4;
+  color: var(--np-muted);
+  font-size:11px;
+  font-weight:500;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.np-filter.is-active{
+  background: var(--np-accent-bg);
+  color: var(--np-navy);
+  font-weight:700;
+}
+.np-filter.is-active .np-filter-icon{ color: var(--np-accent); }
+.np-filter.is-active .np-filter-count{ background: var(--np-accent); color:#fff; }
+
+/* ---------- الرأس ---------- */
+.np-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin: 12px 0 32px;
+}
+.np-head-text h1{
+  margin:0 0 4px;
+  font-size:34px;
+  font-weight:800;
+  line-height:1.2;
+  color: var(--np-navy);
+}
+.np-head-text p{ margin:0; font-size:14px; color: var(--np-muted); }
+.np-markall{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+  padding:9px 16px;
+  border:1px solid var(--np-line);
+  border-radius:10px;
+  background:#fff;
+  color:#4B5563;
+  font-size:14px;
+  cursor:pointer;
+  transition: border-color .15s, color .15s;
+}
+.np-markall:hover:not(:disabled){ border-color: var(--np-accent); color: var(--np-accent); }
+.np-markall:disabled{ opacity:.5; cursor:default; }
+
+/* ---------- القائمة ---------- */
+.np-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:16px; }
+.np-item{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:24px;
+  border:1px solid var(--np-line);
+  border-radius:16px;
+  background:#fff;
+  cursor:pointer;
+  transition: box-shadow .15s, border-color .15s;
+}
+.np-item:hover{ box-shadow: 0 4px 16px rgba(2,39,71,.06); }
+.np-item.is-unread{ border-color:#BFE0EC; background:#FBFEFF; }
+
+.np-item-icon{
+  flex:none;
+  width:48px;
+  height:48px;
+  border-radius:12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.np-item-icon--success{ background: var(--np-success-bg); color: var(--np-success); }
+.np-item-icon--warning{ background: var(--np-warning-bg); color: var(--np-warning); }
+.np-item-icon--info{ background: var(--np-accent-bg); color: var(--np-accent); }
+
+.np-item-body{ flex:1; min-width:0; }
+.np-item-title-row{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+.np-item-title-row h3{ margin:0; font-size:18px; font-weight:800; color: var(--np-navy); }
+.np-item-body p{ margin:0; font-size:14px; color: var(--np-muted); line-height:1.6; }
+
+.np-badge{
+  padding:2px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:500;
+}
+.np-badge--success{ background: var(--np-success-bg); color: var(--np-success); }
+.np-badge--danger{ background: var(--np-danger-bg); color: var(--np-danger); }
+.np-badge--info{ background: var(--np-accent-bg); color: var(--np-accent); }
+
+.np-item-time{ flex:none; align-self:flex-start; font-size:13px; color: var(--np-muted); }
+
+.np-empty{
+  padding:64px 20px;
+  border:1px dashed var(--np-line);
+  border-radius:16px;
+  text-align:center;
+  color: var(--np-muted);
+  font-size:15px;
+}
+
+/* ---------- حالة "لا توجد إشعارات" ---------- */
+.np-empty-state{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  padding:48px 16px 24px;
+}
+.np-empty-icon{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background: var(--np-accent-bg);
+  color: var(--np-navy);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:20px;
+}
+.np-empty-state h2{
+  margin:0 0 12px;
+  font-size:30px;
+  font-weight:500;
+  color: var(--np-navy);
+}
+.np-empty-state p{
+  margin:0 0 20px;
+  max-width:900px;
+  font-size:16px;
+  line-height:1.7;
+  color:#374151;
+}
+.np-empty-btn{
+  min-width:319px;
+  height:54px;
+  padding:0 32px;
+  border:0;
+  border-radius:10px;
+  background: var(--np-navy);
+  color:#fff;
+  font-size:16px;
+  font-weight:500;
+  cursor:pointer;
+  transition: background .15s;
+}
+.np-empty-btn:hover{ background:#033a69; }
+
+/* ---------- استجابة ---------- */
+@media (max-width: 900px){
+  .np-shell{ grid-template-columns: 1fr; }
+  .np-filters-list{ flex-direction:row; flex-wrap:wrap; }
+  .np-filters-list li{ flex:1 1 auto; }
+}
+@media (max-width: 560px){
+  .np-page{ padding:28px 16px 56px; }
+  .np-head{ flex-direction:column-reverse; align-items:stretch; }
+  .np-markall{ align-self:flex-start; margin-top:0; }
+  .np-head-text h1{ font-size:28px; }
+  .np-empty-state h2{ font-size:24px; }
+  .np-empty-btn{ min-width:0; width:100%; }
+  .np-item{ flex-wrap:wrap; padding:18px; }
+  .np-item-time{ order:3; width:100%; padding-inline-start:64px; }
+  .np-item-title-row{ flex-wrap:wrap; }
+}
