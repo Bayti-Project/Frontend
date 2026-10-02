@@ -1,0 +1,183 @@
+/* =====================================================================
+   AccountCreatedPage.css
+   -----------------------------------------------------------------
+   الـ CSS الخاص حصراً بصفحة "تم إنشاء حسابك بنجاح" (AccountCreatedPage.jsx).
+   كل الكلاسات بادئتها ac- عشان ما تتعارض مع باقي الصفحات.
+   القياسات مأخوذة من الفيجما (فريم 1440px).
+   يُستورد داخل AccountCreatedPage.jsx:
+     import "./AccountCreatedPage.css";
+   الخط: Cairo (مضاف في index.html).
+   ===================================================================== */
+
+.ac-page{
+  --ac-navy: #022747;
+  --ac-ink: #1F2937;
+  --ac-ink-2: #374151;
+  --ac-muted: #6B7280;
+  --ac-card: #F3F4F6;
+  --ac-green: #22C55E;
+
+  position:relative;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:140px 16px 60px;
+  background:#fff;
+  font-family:'Cairo','Tajawal','Segoe UI',Tahoma,sans-serif;
+  color:var(--ac-ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- الشعار (أعلى اليمين) ---------- */
+.ac-header{
+  position:absolute;
+  top:29px;
+  inset-inline-start:115px;   /* RTL: يمين */
+}
+.ac-logo{
+  display:block;
+  width:148px;
+  height:auto;
+}
+
+/* ---------- الكارد ---------- */
+.ac-card{
+  width:100%;
+  max-width:928px;
+  min-height:498px;
+  padding:68px 24px 75px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  background:var(--ac-card);
+  border-radius:24px;
+  box-shadow:
+    0 4px 4px rgba(0,0,0,.15),
+    0 0 4px rgba(0,0,0,.10),
+    0 14px 36px rgba(0,0,0,.04);
+}
+
+/* ---------- أيقونة الإيميل + علامة الصح ---------- */
+.ac-icon{
+  position:relative;
+  width:80px;
+  height:80px;
+  flex:none;
+}
+.ac-icon-circle{
+  width:80px;
+  height:80px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:var(--ac-navy);
+  color:#fff;
+  box-shadow:
+    0 0 0 8px #EDF0F6,
+    0 0 14px 6px rgba(237,240,246,.9);
+}
+.ac-icon-badge{
+  position:absolute;
+  left:54px;
+  top:54px;
+  width:28px;
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#fff;
+  border:1.5px solid var(--ac-green);
+  color:var(--ac-green);
+  box-shadow:0 0 0 2px #fff;
+}
+
+/* ---------- النصوص ---------- */
+.ac-title{
+  margin:20px 0 0;
+  font-size:40px;
+  font-weight:700;
+  line-height:60px;
+  color:var(--ac-ink);
+}
+.ac-subtitle{
+  margin:7px 0 0;
+  max-width:470px;
+  font-size:18px;
+  font-weight:400;
+  line-height:26px;
+  color:var(--ac-ink-2);
+}
+
+/* ---------- الأزرار ---------- */
+.ac-actions{
+  width:100%;
+  max-width:754px;
+  margin-top:33px;
+  display:flex;
+  gap:14px;
+}
+.ac-btn{
+  height:54px;
+  padding:0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  font-family:inherit;
+  font-size:16px;
+  font-weight:500;
+  line-height:1;
+  cursor:pointer;
+  transition:background .15s ease, color .15s ease, opacity .15s ease;
+}
+/* أول زر (يمين في RTL): العودة لتسجيل الدخول */
+.ac-btn-outline{
+  flex:353 1 0;
+  background:transparent;
+  color:var(--ac-navy);
+  border:1px solid var(--ac-navy);
+}
+.ac-btn-outline:hover{ background:rgba(2,39,71,.06); }
+/* الزر الثاني (يسار): اعادة ارسال الرابط */
+.ac-btn-primary{
+  flex:387 1 0;
+  background:var(--ac-navy);
+  color:#fff;
+  border:1px solid var(--ac-navy);
+}
+.ac-btn-primary:hover{ background:#033560; }
+.ac-btn-primary:disabled{ opacity:.7; cursor:default; }
+
+/* ---------- الملاحظة السفلية ---------- */
+.ac-note{
+  margin:27px 0 0;
+  font-size:14px;
+  font-weight:500;
+  line-height:22px;
+  color:var(--ac-ink-2);
+}
+.ac-note-muted{
+  color:var(--ac-muted);
+  font-weight:400;
+}
+
+/* ---------- شاشات أصغر ---------- */
+@media (max-width: 1100px){
+  .ac-header{ inset-inline-start:48px; }
+}
+@media (max-width: 640px){
+  .ac-page{ padding:120px 16px 40px; }
+  .ac-header{ inset-inline-start:20px; top:20px; }
+  .ac-logo{ width:112px; }
+  .ac-card{ min-height:0; padding:48px 20px 48px; border-radius:20px; }
+  .ac-title{ font-size:28px; line-height:42px; }
+  .ac-subtitle{ font-size:16px; }
+  .ac-actions{ flex-direction:column; }
+  .ac-btn-outline,
+  .ac-btn-primary{ flex:none; width:100%; }
+  .ac-btn-primary{ order:-1; }
+}
