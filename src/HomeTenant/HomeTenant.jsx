@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import {
@@ -23,49 +23,11 @@ import {
 import "./homeTenant.css";
 import whoImg from "../components/who.jpg";
 import PropertySearchBar from "../components/PropertySearchBar";
-import { useSaved } from "../state/savedProperties";
+import { useSaved, toggleSaved } from "../state/savedProperties";
 import SharePropertyModal from "../components/SharePropertyModal";
 import AuthPromptModal from "../components/AuthPromptModal";
 import LandingFooter from "../components/LandingFooter";
-
-const properties = [
-  {
-    id: 1,
-    title: "شقة فاخرة مطلة على البحر",
-    location: "غزة، الرمال",
-    price: "120,000 ₪",
-    propertyType: "شقة",
-    property_type: "apartment",
-    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
-    beds: 3,
-    baths: 2,
-    area: 160,
-  },
-  {
-    id: 2,
-    title: "فيلا عصريّة مع حديقة",
-    location: "غزة، تل الهوا",
-    price: "80,000 ₪",
-    propertyType: "فيلا",
-    property_type: "villa",
-    image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&q=80",
-    beds: 4,
-    baths: 3,
-    area: 260,
-  },
-  {
-    id: 3,
-    title: "مكتب تجاري في موقع حيوي",
-    location: "غزة، النصر",
-    price: "40,000 ₪",
-    propertyType: "محل تجاري",
-    property_type: "shop",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80",
-    beds: 3,
-    baths: 2,
-    area: 160,
-  },
-];
+import { homeProperties, hasPropertyImage, toPropertyCard } from "../services/api.js";
 
 const steps = [
   { id: 1, title: "ابحث", text: "حدد مواصفات عقارك المفضل" },
@@ -104,6 +66,36 @@ export default function HomeTenant({
   const [prompt, setPrompt] = useState(null);
   const [promptIntent, setPromptIntent] = useState("details");
   const [shareTarget, setShareTarget] = useState(null);
+  const [properties, setProperties] = useState([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    homeProperties()
+      .then(async (res) => {
+        if (!res.ok) throw new Error("تعذر تحميل العقارات");
+        const data = await res.json().catch(() => ({}));
+        if (!active) return;
+        const results = Array.isArray(data?.results) ? data.results.filter(hasPropertyImage) : [];
+        setProperties(
+          results
+            .slice()
+            .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")))
+            .slice(0, 3)
+            .map(toPropertyCard)
+        );
+      })
+      .catch((err) => {
+        if (active) setListError(err?.message || "تعذر تحميل العقارات");
+      })
+      .finally(() => {
+        if (active) setListLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function openAuthPrompt(property, intent) {
     setPromptIntent(intent);
@@ -225,12 +217,21 @@ export default function HomeTenant({
             مشاهدة الكل <FaArrowLeft />
           </button>
         </div>
+        {listLoading ? (
+          <p className="lp-properties-msg">جاري تحميل العقارات...</p>
+        ) : listError ? (
+          <p className="lp-properties-msg">{listError}</p>
+        ) : properties.length === 0 ? (
+          <p className="lp-properties-msg">لا توجد عقارات متاحة حالياً.</p>
+        ) : (
         <div className="lp-properties-grid">
           {properties.map((p) => (
             <article key={p.id} className="lp-property-card">
               <div className="lp-property-img-wrap">
                 <img src={p.image} alt={p.title} />
-                <span className={`lp-property-type prop`}>{p.propertyType}</span>
+                {p.typeLabel && (
+                  <span className={`lp-property-type prop`}>{p.typeLabel}</span>
+                )}
                 <button
                   className="lp-card-action share"
                   type="button"
@@ -243,7 +244,11 @@ export default function HomeTenant({
                   className={`lp-card-action save${savedIds.has(String(p.id)) ? " active" : ""}`}
                   type="button"
                   aria-label="حفظ العقار"
-                  onClick={() => openAuthPrompt(p, "save")}
+                  onClick={() => {
+                      /* المستأجر مسجل → ينحفظ مباشرة، بدون نافذة تسجيل */
+                      if (localStorage.getItem("access_token")) toggleSaved(p);
+                      else openAuthPrompt(p, "save");
+                    }}
                 >
                   <FaBookmark />
                 </button>
@@ -254,12 +259,12 @@ export default function HomeTenant({
                   <p className="lp-property-location">
                     <FaMapMarkerAlt /> {p.location}
                   </p>
-                  <span className="lp-property-price">{p.price}</span>
+                  <span className="lp-property-price">{p.priceLabel}</span>
                 </div>
                 <div className="lp-property-features">
                   {p.beds > 0 && <span><FaBed /> {p.beds} غرف</span>}
                   {p.baths > 0 && <span><FaBath /> {p.baths} حمام</span>}
-                  {p.area > 0 && <span><FaRulerCombined /> {p.area}م²</span>}
+                  {p.size > 0 && <span><FaRulerCombined /> {p.size}م²</span>}
                 </div>
                 <div className="lp-property-footer">
                   <button
@@ -273,6 +278,7 @@ export default function HomeTenant({
             </article>
           ))}
         </div>
+        )}
       </section>
 
       {/* How It Works */}

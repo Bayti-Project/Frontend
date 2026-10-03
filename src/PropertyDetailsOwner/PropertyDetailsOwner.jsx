@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { apiFetch, resolveMediaUrl, isOwnerRole } from "../services/api";
 import { useStoredUser, useUserAvatar } from "../state/currentUser";
 import defaultAvatar from "../components/default-avatar.svg";
+import ExistingInterestModal from "../components/ExistingInterestModal";
 import "./PropertyDetailsOwner.css";
 
 /**
@@ -86,6 +87,31 @@ function describeInterestError(status, data) {
     if (status === 404) return "العقار غير موجود.";
     if (status >= 500) return "خطأ في الخادم، حاول مرة أخرى بعد قليل.";
     return detail || "تعذر إرسال الطلب، حاول مرة أخرى.";
+}
+
+/* هل الـbackend رفض لأن في طلب مسبق لنفس العقار؟ */
+const DUPLICATE_INTEREST_DETAILS = [
+  "You have already sent an interest request for this property.",
+  "You already have an interest request for this property.",
+];
+
+function isDuplicateInterest(status, data) {
+  if (status !== 400 && status !== 409) return false;
+  const detail = typeof data?.detail === "string" ? data.detail : "";
+  if (DUPLICATE_INTEREST_DETAILS.includes(detail)) return true;
+  return /already/i.test(detail) && /interest/i.test(detail);
+}
+
+/* استخراج بيانات الطلب القائم من رد الـAPI (لو موجودة) */
+function pickExistingRequest(data) {
+  const raw = data?.existing_request || data?.interest_request || data?.request || data || {};
+  const owner = raw.owner || data?.owner || {};
+  return {
+    requestId: raw.id || raw.request_id || raw.reference || "",
+    status: String(raw.status || "pending").toLowerCase(),
+    createdAt: raw.created_at || raw.createdAt || "",
+    ownerName: owner.full_name || owner.name || raw.owner_name || "",
+  };
 }
 
 /* رد الـPOST: { id, tenant, property, owner, status: "pending", created_at, updated_at }
@@ -805,6 +831,8 @@ export default function PropertyDetailsOwner() {
     const [interest, setInterest] = useState({ status: "none", phone: "" });
     const [submitting, setSubmitting] = useState(false);
     const [interestError, setInterestError] = useState("");
+    /* طلب اهتمام مسبق موجود — بتظهر النافذة Yellow لinstead من رسالة خطأ */
+    const [existingRequest, setExistingRequest] = useState(null);
 
     /* حذف العقار (للمالك فقط) */
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -837,6 +865,12 @@ export default function PropertyDetailsOwner() {
 
     /* محاولة تحديث بيانات أكثر اكتمالاً من الـ API إن توفّر، دون إيقاف العرض عند الفشل */
     useEffect(() => {
+        /* GET /api/properties/{id}/ صار يتطلب token: الزائر نوجّهه لصفحة الدخول
+           بدل ما ننادي الـ endpoint ونستقبل 401 */
+        if (!isLoggedIn()) {
+            navigate("/login", { replace: true, state: { redirectTo: `/property/${id}` } });
+            return;
+        }
         let active = true;
         (async () => {
             try {
@@ -851,7 +885,7 @@ export default function PropertyDetailsOwner() {
         return () => {
             active = false;
         };
-    }, [id]);
+    }, [id, navigate]);
 
     /* ما في GET للحالة ولا DELETE للإلغاء بالـbackend حالياً، فما في طلب يُرسل
    عند فتح الصفحة ولا فحص دوري. الحالة بتتحدث مرة واحدة بعد POST بنجاح. */
@@ -881,6 +915,11 @@ export default function PropertyDetailsOwner() {
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 console.error("[interest] فشل الإرسال", res.status, data);
+                /* في طلب مسبق لنفس العقار → نافذة "طلب اهتمام مسبق" بدل رسالة خطأ */
+                if (isDuplicateInterest(res.status, data)) {
+                    setExistingRequest(pickExistingRequest(data));
+                    return;
+                }
                 setInterestError(describeInterestError(res.status, data));
                 return;
             }
@@ -914,6 +953,16 @@ export default function PropertyDetailsOwner() {
         const digits = String(ownerPhone || "").replace(/\D/g, "");
         if (digits) window.open(`https://wa.me/${digits}`, "_blank", "noopener");
     };
+
+    if (!isLoggedIn()) {
+        return (
+            <div className="pdo-page" dir="rtl">
+                <main className="pdo-main">
+                    <p className="pdo-error">جارٍ تحويلك إلى صفحة تسجيل الدخول...</p>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="pdo-page" dir="rtl">
@@ -1045,6 +1094,15 @@ export default function PropertyDetailsOwner() {
             />
 
             <LoginPrompt open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} />
+
+            <ExistingInterestModal
+                request={existingRequest}
+                onClose={() => setExistingRequest(null)}
+                onViewRequest={() => {
+                    setExistingRequest(null);
+                    navigate("/my-requests");
+                }}
+            />
 
             <DeleteConfirmDialog
                 open={deleteOpen}

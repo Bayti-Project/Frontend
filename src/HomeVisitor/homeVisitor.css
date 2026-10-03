@@ -220,6 +220,16 @@ img {
   gap: 28px;
 }
 
+.lp-properties-msg {
+  margin: 0;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--lp-muted, #6b7280);
+  background: var(--lp-white, #fff);
+  border: 1px solid var(--lp-border, #e5e7eb);
+  border-radius: var(--radius, 12px);
+}
+
 .lp-property-card {
   background: var(--lp-white);
   border-radius: var(--radius);

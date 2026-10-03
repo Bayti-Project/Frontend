@@ -186,6 +186,42 @@ export function resolveRole(role) {
   return '';
 }
 
+/* الدور الحقيقي من الـAPI — الملف الشخصي أولاً، وعقارات المالك كاحتياط.
+   بنستخدمه وقت التشغيل لأن localStorage ممكن يكون قديم أو ناقص */
+export async function fetchCurrentRole() {
+  try {
+    const res = await apiFetch('/api/auth/profile/');
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      const raw = data?.user || data;
+      const role = resolveRole(raw?.role);
+      if (role) return role;
+    }
+  } catch {
+    /* نكمل بالاستنتاج */
+  }
+
+  /* 2) endpoint خاص بالمالك: 200 يعني مالك، 403 يعني مستأجر.
+      أحسن من الاعتماد على /mine/ لأن 404there ممكن يعني "ما عنده عقارات" */
+  try {
+    const res = await apiFetch('/api/owner/interest-requests');
+    if (res.ok) return 'owner';
+    if (res.status === 403) return 'tenant';
+  } catch {
+    /* نكمل بالاستنتاج */
+  }
+
+  /* 3) عقارات المالك: 200 يعني مالك. أي رد تاني ما بنعتبره مستأجر
+      لأن 404 ممكن معناها "ما عنده عقارات" و401 معناها جلسة منتهية */
+  try {
+    const res = await apiFetch('/api/properties/mine/');
+    if (res.ok) return 'owner';
+    return '';
+  } catch {
+    return '';
+  }
+}
+
 export function accountTypeToApi(value) {
   return value === 'مكتب عقاري' ? 'office' : 'individual';
 }
@@ -226,6 +262,34 @@ export async function searchProperties(params = {}) {
   return apiFetch(`/api/properties/search/${qs ? `?${qs}` : ''}`);
 }
 
+// نفس search/ بالضبط، بس للرئيسية ويتطلب تسجيل دخول
+export async function homeProperties(params = {}) {
+  const qs = buildPropertySearchQuery(params);
+  const path = `/api/properties/home/${qs ? `?${qs}` : ''}`;
+  const res = await apiFetch(path);
+  // لحد ما يُنشر /home/ على الباكاند، نرجع لـsearch/: نفس الـshape ونفس استبعاد rented
+  if (res.ok) return res;
+  return apiFetch(`/api/properties/search/${qs ? `?${qs}` : ''}`);
+}
+
+// ─── حفظ العقارات ومشاركتها ───
+export async function saveProperty(id) {
+  return apiFetch(`/api/properties/${id}/save/`, { method: 'POST' });
+}
+
+export async function unsaveProperty(id) {
+  return apiFetch(`/api/properties/${id}/save/`, { method: 'DELETE' });
+}
+
+export async function fetchSavedProperties() {
+  return apiFetch('/api/users/saved-properties/');
+}
+
+// مشاركة العقار — بدون توكن، وبترجع { link }
+export async function fetchShareLink(id) {
+  return apiFetch(`/api/properties/${id}/share/`);
+}
+
 // مسار أول صورة للعقار من أي حقل يحملها
 export function getPropertyImagePath(property) {
   if (!property || typeof property !== 'object') return '';
@@ -241,6 +305,24 @@ export function getPropertyImagePath(property) {
 
 // الموقع يعرض العقارات بصورها فقط؛ العقار بدون صورة ما بيظهر
 export const hasPropertyImage = (property) => Boolean(getPropertyImagePath(property));
+
+// بطاقة العرض: تحافظ على حقول الـAPI الأصلية للمشاركة والحفظ وتضيف مفاتيح العرض
+export function toPropertyCard(property) {
+  const location =
+    property.address ||
+    [property.neighborhood, property.area, property.governorate].filter(Boolean).join('، ') ||
+    'غزة';
+  return {
+    ...property,
+    image: resolveMediaUrl(getPropertyImagePath(property)),
+    location,
+    priceLabel: `${Number(property.price || 0).toLocaleString('en-US')} ₪`,
+    typeLabel: PROPERTY_TYPE_LABELS[property.property_type] || '',
+    beds: property.bedrooms || 0,
+    baths: property.bathrooms || 0,
+    size: property.area_sqm || 0,
+  };
+}
 
 // ─── قيم البحث القابلة للعرض ───
 export const GOVERNORATE_OPTIONS = [

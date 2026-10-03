@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Routes, Route, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Routes, Route, useNavigate, useParams, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import LandingFooter from "./components/LandingFooter";
 import AuthPromptModal from "./components/AuthPromptModal";
-import { resolveMediaUrl, clearCredentials, isOwnerRole, isTenantRole } from "./services/api.js";
+import { resolveMediaUrl, clearCredentials, isOwnerRole, isTenantRole, resolveRole, fetchCurrentRole } from "./services/api.js";
 import defaultAvatar from "./components/default-avatar.svg";
 import "./styles/style.css";
 
@@ -34,10 +34,47 @@ import OwnerRequests from "./ownerRequests/OwnerRequests.jsx";
 
 const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
 
+function homePathFor(role) {
+  if (isTenantRole(role)) return "/home-tenant";
+  if (isOwnerRole(role)) return "/home-owner";
+  return null;
+}
+
 /**
  * يمنع الزائر غير المسجّل من الوصول لصفحة تفاصيل العقار من أي رابط،
  * ويعرض نافذة "يجب إنشاء حساب لعرض التفاصيل" بدلاً منها.
  */
+/* صفحة الطلبات: المالك يشوف صفحة طلباته (قبول/رفض) والمستأجر يشوف
+     طلباته هو. بتشتغل حتى لو الدور لسا مجهول — بتسأل الـAPI لحالها،
+     فالمالك ما بيقدر يوصل لصفحة المستأجر */
+function RoleAwareRequests({ role }) {
+  const [resolved, setResolved] = useState(role);
+  const [loading, setLoading] = useState(!role);
+
+  useEffect(() => {
+    if (resolved) return undefined;
+    let active = true;
+    fetchCurrentRole().then((r) => {
+      if (!active) return;
+      setResolved(r);
+      setLoading(false);
+    });
+    /* لو الـAPI ما ردّ بنعرض صفحة المستأجر (الوضع القديم) بدل ما نعلق */
+    const timer = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 5000);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [resolved]);
+
+  if (loading) {
+    return <p className="op-empty">جاري التحميل...</p>;
+  }
+  return isOwnerRole(resolved) ? <OwnerRequests /> : <MyRequests />;
+}
+
 function RequireAuth({ children }) {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -58,7 +95,6 @@ function RequireAuth({ children }) {
 
 export default function App() {
   const navigate = useNavigate();
-  const [view, setView] = useState("password");
 
   const [user, setUser] = useState(() => {
     let saved;
@@ -82,19 +118,63 @@ export default function App() {
     };
   });
 
+  const [role, setRole] = useState(() => resolveRole(user.role));
+  /* بننتظر تغيّر الدور مرة وحدة بس — بعد ما يخلص الطلب بنكمل
+     العرض حتى لو الـAPI ما ردّ، عشان ما نعلق على شاشة تحميل */
+  const [roleChecked, setRoleChecked] = useState(() => !localStorage.getItem("access_token"));
+
+  /* localStorage ممكن يكون قديم أو فيه دور غلط، فنرجع نشيك الدور من الـAPI
+     أول ما تفتح التطبيق — هذا اللي بيوجه لكل صفحات المالك/المستأجر */
+  useEffect(() => {
+    /* الزائر: الدور مو محتاج تحقق — وroleChecked بيبدأ true أصلاً */
+    if (!isLoggedIn()) return undefined;
+    let active = true;
+    fetchCurrentRole().then((resolved) => {
+      if (!active) return;
+      if (resolved) {
+        setRole(resolved);
+        try {
+          const saved = JSON.parse(localStorage.getItem('bayti_user') || 'null');
+          if (saved && resolveRole(saved.role) !== resolved) {
+            localStorage.setItem(
+              'bayti_user',
+              JSON.stringify({ ...saved, role: resolved === 'owner' ? 'مالك عقار' : 'مستأجر' })
+            );
+          }
+        } catch {
+          /* تجاهل localStorage غير الصالح */
+        }
+      }
+      setRoleChecked(true);
+    }).catch(() => {
+      if (active) setRoleChecked(true);
+    });
+    /* شبكة أمان: لو الـAPI اتعلّق، بنكمّل العرض بعد 4 ثواني */
+    const timer = setTimeout(() => {
+      if (active) setRoleChecked(true);
+    }, 4000);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, []);
+
   const navProps = {
     onPropertyClick: (id) => navigate(`/property/${id}`),
     onSearchClick: () => navigate("/search"),
-    /* صفحة الطلبات تختلف حسب دور المستخدم: للمالك "طلبات الاهتمام"، وللمستأجر "طلباتي" */
-    onRequestsClick: () => {
-      navigate(isOwnerRole(user.role) ? "/owner-requests" : "/my-requests");
+    /* صفحة الطلبات بتختلف حسب دور المستخدم: للمالك "طلبات الاهتمام"، وللمستأجر "طلباتي" */
+    onRequestsClick: async () => {
+      /* إذا الدور لسا ما اتحدد بنسأل الـAPI — عشان ضغطة "طلباتي"
+         ما تفتحش صفحة المستأجر لمالك */
+      const resolved = role ? role : await fetchCurrentRole();
+      navigate(isOwnerRole(resolved) ? "/owner-requests" : "/my-requests");
     },
     onSavedClick: () => navigate("/saved"),
-    onHomeClick: () => {
-      setView("password");
-      if (isTenantRole(user.role)) navigate("/home-tenant");
-      else if (isOwnerRole(user.role)) navigate("/home-owner");
-      else navigate("/");
+    onHomeClick: async () => {
+      /* إذا الدور لسا ما اتحدد بنسأل الـAPI قبل التوجيه — عشان المالك
+         ما يوصل لصفحة المستأجر لو الدور ضل مجهول */
+      const resolved = homePathFor(role) ? role : await fetchCurrentRole();
+      navigate(homePathFor(resolved) || "/");
     },
     onProfileClick: () => {
       try {
@@ -103,14 +183,12 @@ export default function App() {
       } catch {
         /* تجاهل بيانات localStorage غير الصالحة */
       }
-      setView("profile");
+      navigate("/profile");
     },
     onChangePasswordClick: () => {
-      setView("password");
       navigate("/change-password");
     },
     onLogoutClick: () => {
-      setView("password");
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("bayti_user");
@@ -127,57 +205,94 @@ export default function App() {
         city: "",
         bio: "",
       });
+      setRole("");
       navigate("/login");
     },
   };
 
-  if (view === "profile") {
-    const isOwner = isOwnerRole(user.role);
-    const profileProps = {
-      currentUser: user,
-      ...navProps,
-      onEditProfileClick: () => setView("edit"),
-      onAddPropertyClick: () => {
-        setView("password");
-        navigate("/add-property");
-      },
-    };
-    return isOwner ? <OwnerProfile {...profileProps} /> : <TenantProfile {...profileProps} />;
-  }
+  /* البروفايل والتعديل صاروا راوت حقيقي ("/profile" و"/edit-profile")
+     بدل ما نرسمهم بره الـRoutes — كان أي لينك بالناف بار ما بيشتغل
+     من صفحاتهم لأن navigate كان بيغيّر المسار والصفحة ما بترجع ترسم */
+  const profileProps = {
+    currentUser: user,
+    ...navProps,
+    onEditProfileClick: () => navigate("/edit-profile"),
+    onAddPropertyClick: () => navigate("/add-property"),
+  };
 
-  if (view === "edit") {
+  const profileElement = isOwnerRole(role) ? (
+    <OwnerProfile {...profileProps} />
+  ) : (
+    <TenantProfile {...profileProps} />
+  );
+
+  /* نفس الصفحة للدورين — التشييل جواها بيختار حسب الدور */
+  const requestsElement = <RoleAwareRequests role={role} />;
+
+  const editProfileElement = (
+    <EditProfile
+      currentUser={user}
+      onSave={(updated) => {
+        setUser((prev) => {
+          const merged = { ...prev, ...updated };
+          try {
+            localStorage.setItem("bayti_user", JSON.stringify(merged));
+          } catch {
+            /* تجاهل تعذر الحفظ */
+          }
+          return merged;
+        });
+        navigate("/profile");
+      }}
+      onCancel={() => navigate("/profile")}
+      {...navProps}
+    />
+  );
+
+  /* بنستنى تغيّر الدور مرة وحدة عشان ما نرسم صفحة المستأجر لمالك
+     لحظة قبل ما يوصل رد الـAPI */
+  if (!roleChecked) {
     return (
-      <EditProfile
-        currentUser={user}
-        onSave={(updated) => {
-          setUser((prev) => {
-            const merged = { ...prev, ...updated };
-            try {
-              localStorage.setItem("bayti_user", JSON.stringify(merged));
-            } catch {
-              /* تجاهل تعذر الحفظ */
-            }
-            return merged;
-          });
-          setView("profile");
-        }}
-        onCancel={() => setView("profile")}
-        {...navProps}
-      />
+      <div className="page" dir="rtl">
+        <p className="op-empty">جاري التحميل...</p>
+      </div>
     );
   }
+
+  /* "/" و"/home" للزائر — المستخدم المسجّل ينبعت لصفحته حسب دوره */
+  const landingRoute = () => {
+    const path = isLoggedIn() ? homePathFor(role) : null;
+    if (path) return <Navigate to={path} replace />;
+    return <Home {...navProps} />;
+  };
 
   return (
     <Routes>
       {/* 1. إضافة مسار الصفحة الرئيسية للرابط الأساسي "/" */}
 
-      <Route path="/" element={<Home {...navProps} />} />
+      <Route path="/" element={landingRoute()} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/home" element={<Home {...navProps} />} />
+      <Route path="/home" element={landingRoute()} />
       <Route path="/home-tenant" element={<HomeTenant {...navProps} />} />
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <div dir="rtl">{profileElement}</div>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/edit-profile"
+        element={
+          <RequireAuth>
+            <div dir="rtl">{editProfileElement}</div>
+          </RequireAuth>
+        }
+      />
       <Route
         path="/saved"
         element={
@@ -196,7 +311,7 @@ export default function App() {
           <RequireAuth>
             <div className="page" dir="rtl">
               <Navbar {...navProps} />
-              <MyRequests />
+              {requestsElement}
               <LandingFooter />
             </div>
           </RequireAuth>
@@ -220,7 +335,7 @@ export default function App() {
           <RequireAuth>
             <div className="page" dir="rtl">
               <Navbar {...navProps} />
-              <OwnerRequests />
+              {requestsElement}
               <LandingFooter />
             </div>
           </RequireAuth>

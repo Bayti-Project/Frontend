@@ -162,8 +162,16 @@ const STATUS_STYLES = {
   pending: { label: "قيد المراجعة", tone: "amber" },
   approved: { label: "مقبول", tone: "green" },
   rejected: { label: "مرفوض", tone: "red" },
-  active: { label: "نشط", tone: "green" },
-  hidden: { label: "مخفي", tone: "gray" },
+  available: { label: "متاح", tone: "green" },
+  reserved: { label: "محجوز", tone: "amber" },
+  rented: { label: "مؤجر", tone: "gray" },
+};
+
+/* القيم المقبولة من PATCH /api/properties/{id}/status/ */
+const PROPERTY_STATUS = {
+  available: STATUS_STYLES.available,
+  reserved: STATUS_STYLES.reserved,
+  rented: STATUS_STYLES.rented,
 };
 
 /* hash ثابت للعقار — بيخلي الأرقام ما تتغير بين الريفرش */
@@ -244,6 +252,8 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
   const [range, setRange] = useState("30");
+  const [ownerStats, setOwnerStats] = useState(null);
+  const [ownerRequests, setOwnerRequests] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -260,6 +270,58 @@ export default function OwnerDashboard() {
         if (!cancelled) setFetchError(err.message || "تعذّر تحميل البيانات");
       } finally {
         if (!cancelled) setLoading(false);
+      }
+
+      /* إحصائيات وآخر الطلبات من endpoint بروفايل المالك.
+         ما بيكسر الصفحة إذا ما ردّ — الأرقام ترجع للاشتقاق المحلي */
+      const [profileRes, requestsRes, approvedRes] = await Promise.all([
+        apiFetch("/api/auth/owner/profile/"),
+        apiFetch("/api/owner/interest-requests"),
+        apiFetch("/api/owner/interest-requests?status=approved"),
+      ]);
+      if (cancelled) return;
+
+      if (profileRes.ok) {
+        const profileData = await profileRes.json().catch(() => ({}));
+        if (profileData?.stats) setOwnerStats(profileData.stats);
+        if (Array.isArray(profileData?.recent_interest_requests)) {
+          setOwnerRequests(
+            profileData.recent_interest_requests.map((item) => ({
+              id: item.id,
+              name: item.tenant_name || "مستأجر",
+              property: item.property_title || "",
+              status: STATUS_STYLES[item.status] || STATUS_STYLES.pending,
+            }))
+          );
+        }
+      }
+
+      if (requestsRes.ok) {
+        const reqData = await requestsRes.json().catch(() => ({}));
+        const reqList = Array.isArray(reqData) ? reqData : reqData?.results || [];
+        if (Array.isArray(reqList) && reqList.length) {
+          setOwnerRequests(
+            reqList.slice(0, 4).map((item) => ({
+              id: item.id,
+              name: item.tenant_name || "مستأجر",
+              property: item.property_title || "",
+              status: STATUS_STYLES[item.status] || STATUS_STYLES.pending,
+            }))
+          );
+        }
+      }
+
+      if (approvedRes.ok) {
+        const approvedData = await approvedRes.json().catch(() => ({}));
+        const approvedList = Array.isArray(approvedData)
+          ? approvedData
+          : approvedData?.results || [];
+        if (Array.isArray(approvedList)) {
+          setOwnerStats((prev) => ({
+            ...(prev || {}),
+            approved_requests: approvedList.length,
+          }));
+        }
       }
     }
 
@@ -282,30 +344,36 @@ export default function OwnerDashboard() {
     () =>
       list.map((p) => {
         const seed = seedFrom(p.id);
-        const isHidden = p.status === "hidden" || p.is_hidden === true || p.visibility === "hidden";
+        /* حالة العقار الحقيقية من الـAPI: available | reserved | rented */
+        const raw = String(p.status || "").toLowerCase();
+        const status = PROPERTY_STATUS[raw] || PROPERTY_STATUS.available;
         return {
           id: p.id,
           title: p.title || "عقار بدون عنوان",
           image: getPropertyImage(p),
           interests: seed % 7,
           views: 40 + (seed % 260),
-          status: isHidden ? STATUS_STYLES.hidden : STATUS_STYLES.active,
+          status,
         };
       }),
     [list]
   );
 
+  /* أرقام الـAPI لها الأولوية؛ الاشتقاق المحلي احتياطي لو ما ردّ الـendpoint */
   const stats = useMemo(() => {
-    const isRented = (p) =>
-      p?.status === "rented" || p?.status === "occupied" || p?.is_rented === true || p?.is_rented === "true";
+    const isRented = (p) => String(p?.status || "").toLowerCase() === "rented";
+    const isActive = (p) => String(p?.status || "").toLowerCase() === "available";
 
     return {
-      total: list.length,
-      newRequests: rows.reduce((sum, r) => sum + r.interests, 0),
-      approved: rows.reduce((sum, r) => sum + r.interests, 0) * 2 + 6,
-      rented: list.filter(isRented).length,
+      total: ownerStats?.total_properties ?? list.length,
+      newRequests: ownerStats?.total_interest_requests ?? rows.reduce((s, r) => s + r.interests, 0),
+      approved:
+        ownerStats?.approved_requests ??
+        rows.reduce((sum, r) => sum + r.interests, 0) * 2 + 6,
+      rented: ownerStats?.rented_properties ?? list.filter(isRented).length,
+      active: ownerStats?.active_properties ?? list.filter(isActive).length,
     };
-  }, [list, rows]);
+  }, [list, rows, ownerStats]);
 
   const trends = useMemo(
     () => ({
@@ -317,8 +385,9 @@ export default function OwnerDashboard() {
     [stats.newRequests]
   );
 
-  /* آخر الطلبات — من العقارات الحقيقية مع tenants تجريبية */
+  /* آخر الطلبات — من الـAPI، وعيّنة تجريبية كاحتياطي */
   const recentRequests = useMemo(() => {
+    if (ownerRequests.length) return ownerRequests.slice(0, 4);
     if (!rows.length) return [];
     const SAMPLE_TENANTS = [
       { name: "أحمد محمد", status: "pending" },
@@ -335,7 +404,7 @@ export default function OwnerDashboard() {
         status: STATUS_STYLES[t.status],
       };
     });
-  }, [rows]);
+  }, [rows, ownerRequests]);
 
   return (
     <main className="od-main" dir="rtl">

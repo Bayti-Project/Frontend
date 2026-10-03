@@ -3,7 +3,7 @@ import '../OwnerProfile/OwnerProfile.css';
 import './TenantProfile.css';
 import Navbar from '../components/Navbar';
 import LandingFooter from '../components/LandingFooter';
-import { apiFetch, normalizeUser, resolveMediaUrl } from '../services/api.js';
+import { apiFetch, normalizeUser, resolveMediaUrl, getPropertyImagePath } from '../services/api.js';
 import { notifyUserChange, persistUser } from '../state/currentUser.js';
 import defaultAvatar from '../components/default-avatar.svg';
 import {
@@ -14,8 +14,32 @@ import {
 const STATUS_MAP = {
     pending: 'قيد الانتظار',
     accepted: 'مقبول',
+    approved: 'مقبول',
     rejected: 'مرفوض',
 };
+
+const formatPrice = (value) => `${Number(value || 0).toLocaleString('en-US')} ₪`;
+
+function mapSavedProperty(entry) {
+    const p = entry?.property || entry || {};
+    return {
+        id: p.id,
+        title: p.title || 'عقار',
+        location: p.address || '',
+        price: formatPrice(p.price),
+        image: resolveMediaUrl(getPropertyImagePath(p)) || defaultAvatar,
+    };
+}
+
+function mapTenantRequest(item) {
+    return {
+        id: item?.id,
+        property: item?.property_title || 'عقار',
+        date: item?.created_at ? new Date(item.created_at).toLocaleDateString('ar-EG') : '',
+        status: item?.status || 'pending',
+        image: resolveMediaUrl(item?.property_thumbnail || '') || defaultAvatar,
+    };
+}
 
 const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePasswordClick, onEditProfileClick, onLogoutClick, onSearchClick, onSavedClick, onRequestsClick }) => {
     const [loading, setLoading] = useState(true);
@@ -29,70 +53,115 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
         whatsapp: currentUser?.whatsapp || '',
         role: currentUser?.role || 'مستأجر',
         joinedYear: currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2023',
-        avatar: currentUser?.avatar || defaultAvatar
+avatar: currentUser?.avatar || defaultAvatar,
+        isVerified: false
     });
 
     const [statsData, setStatsData] = useState({
-        saved: 18,
-        sent: 12,
-        accepted: 6,
-        rejected: 4
+        saved: 0,
+        sent: 0,
+        accepted: 0,
+        rejected: 0
     });
 
     const [savedProperties, setSavedProperties] = useState([]);
     const [interestRequests, setInterestRequests] = useState([]);
 
-    useEffect(() => {
+useEffect(() => {
         const token = localStorage.getItem('access_token');
         if (!token) {
             setLoading(false);
             return;
         }
 
+        let cancelled = false;
         setLoading(true);
-        apiFetch('/api/auth/profile/')
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                if (!data) return;
 
-                const u = normalizeUser(data);
-                const year = data.created_at || data.createdAt
-                    ? new Date(data.created_at || data.createdAt).getFullYear()
-                    : '2024';
+        const applyUser = (raw) => {
+            const u = normalizeUser(raw || {});
+            const created = raw?.created_at || raw?.createdAt;
+            setUserData((prev) => ({
+                ...prev,
+                name: u.name || prev.name,
+                email: u.email || prev.email,
+                phone: u.phone || prev.phone,
+                whatsapp: u.whatsapp || prev.whatsapp,
+                role: u.role || prev.role,
+                joinedYear: created ? new Date(created).getFullYear() : prev.joinedYear,
+                avatar: u.avatar || prev.avatar,
+                isVerified: Boolean(raw?.is_verified),
+            }));
 
-                setUserData((prev) => ({
-                    ...prev,
-                    name: u.name || prev.name,
-                    email: u.email || prev.email,
-                    phone: u.phone || prev.phone,
-                    whatsapp: u.whatsapp || prev.whatsapp,
-                    role: u.role || prev.role,
-                    joinedYear: year,
-                    avatar: u.avatar || prev.avatar,
-                }));
+            const saved = JSON.parse(localStorage.getItem('bayti_user') || '{}');
+            localStorage.setItem(
+                'bayti_user',
+                JSON.stringify({
+                    ...saved,
+                    name: u.name,
+                    email: u.email,
+                    phone: u.phone,
+                    /* لازم نحافظ على الدور المحفوظ إذا الـAPI ما رجّع role */
+                    role: u.role || saved.role,
+                    whatsapp: u.whatsapp,
+                    avatar: u.avatar
+                })
+            );
+            notifyUserChange();
+        };
 
-                // إمكانية تحديث البيانات الديناميكية من الـ API عند توفرها
-                if (data.saved_properties) setSavedProperties(data.saved_properties);
-                if (data.requests) setInterestRequests(data.requests);
-                if (data.stats) setStatsData(data.stats);
+        (async () => {
+            /* endpoint واحد: المستخدم + الإحصائيات + آخر الطلبات والمحفوظات */
+            try {
+                const res = await apiFetch('/api/auth/tenant/profile/');
+                if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (cancelled) return;
 
-                const saved = JSON.parse(localStorage.getItem('bayti_user') || '{}');
-                localStorage.setItem(
-                    'bayti_user',
-                    JSON.stringify({
-                        ...saved,
-                        name: u.name,
-                        email: u.email,
-                        phone: u.phone,
-                        role: u.role,
-                        whatsapp: u.whatsapp,
-                        avatar: u.avatar
-                    })
-                );
-                notifyUserChange();
-            })
-            .catch((err) => console.error("Error fetching profile:", err))
-            .finally(() => setLoading(false));
+                    applyUser(data.user);
+                    setStatsData({
+                        saved: data.stats?.saved_properties_count ?? 0,
+                        sent: data.stats?.total_interest_requests ?? 0,
+                        accepted: data.stats?.approved_requests ?? 0,
+                        rejected: data.stats?.rejected_requests ?? 0,
+                    });
+                    setInterestRequests(
+                        (Array.isArray(data.recent_interest_requests) ? data.recent_interest_requests : [])
+                            .map(mapTenantRequest)
+                    );
+                    setSavedProperties(
+                        (Array.isArray(data.recent_saved_properties) ? data.recent_saved_properties : [])
+                            .map(mapSavedProperty)
+                    );
+                    return;
+                }
+            } catch {
+                /* بنكمل بالطريقة القديمة */
+            }
+
+            /* fallback لحد ما ينشر /api/auth/tenant/profile/ على الباكاند */
+            const [profileRes, savedRes] = await Promise.all([
+                apiFetch('/api/auth/profile/'),
+                apiFetch('/api/users/saved-properties/'),
+            ]);
+            if (cancelled) return;
+
+            if (profileRes.ok) applyUser(await profileRes.json().catch(() => ({})));
+
+            if (savedRes.ok) {
+                const savedData = await savedRes.json().catch(() => ({}));
+                const list = savedData?.saved_properties || savedData?.results || [];
+                if (Array.isArray(list) && list.length) {
+                    setSavedProperties(list.slice(0, 3).map(mapSavedProperty));
+                    setStatsData((prev) => ({ ...prev, saved: list.length }));
+                }
+            }
+        })().finally(() => {
+            if (!cancelled) setLoading(false);
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     // دالة لتحديث الصورة الشخصية عند الاختيار
@@ -152,21 +221,7 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
         { id: 4, title: 'الطلبات المرفوضة', count: statsData.rejected, icon: <FaTimesCircle />, color: '#e11d48', bg: '#ffe4e6' },
     ];
 
-    // القائمة الافتراضية للعقارات المحفوظة في حال عدم توفرها من Backend
-    const displaySavedProperties = savedProperties.length > 0 ? savedProperties : [
-        { id: 1, title: 'شقة فاخرة في الرمال', location: 'الرمال - بالقرب من البحر', price: '1,800 شيكل', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=200&q=80' },
-        { id: 2, title: 'منزل في النصر', location: 'النصر - شارع الوحدة', price: '2,500 شيكل', image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=200&q=80' },
-        { id: 3, title: 'شقة في الشيخ رضوان', location: 'الشيخ رضوان - شارع الشهداء', price: '1,400 شيكل', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&q=80' },
-    ];
-
-    // القائمة الافتراضية لطلبات الاهتمام
-    const displayRequests = interestRequests.length > 0 ? interestRequests : [
-        { id: 1, property: 'شقة في الرمال', date: '20 مايو 2024', status: 'pending', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=200&q=80' },
-        { id: 2, property: 'منزل في النصر', date: '18 مايو 2024', status: 'accepted', image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=200&q=80' },
-        { id: 3, property: 'شقة في الشيخ رضوان', date: '19 مايو 2024', status: 'rejected', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&q=80' },
-    ];
-
-    return (
+return (
         <div className="owner-profile-app tenant-profile-app" dir="rtl">
             <Navbar
                 onHomeClick={onHomeClick}
@@ -211,7 +266,7 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
                                     )}
                                 </div>
                                 <div className="user-details">
-                                    <h2>{userData.name} <FaCheckCircle className="verified-badge" /></h2>
+                                    <h2>{userData.name} {userData.isVerified && <FaCheckCircle className="verified-badge" />}</h2>
                                     <p className="email">{userData.email}</p>
 
                                     <div className="badges-row">
@@ -248,8 +303,10 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
                                 <div className="card-header">
                                     <h3><FaBookmark /> آخر العقارات المحفوظة</h3>
                                 </div>
-                                <div className="card-body">
-                                    {displaySavedProperties.map((item) => (
+<div className="card-body">
+                                    {savedProperties.length === 0 ? (
+                                        <p className="op-empty">لا توجد عقارات محفوظة بعد.</p>
+                                    ) : savedProperties.map((item) => (
                                         <div key={item.id} className="property-item">
                                             <img src={item.image} alt={item.title} className="prop-img" />
                                             <div className="prop-details">
@@ -268,19 +325,23 @@ const TenantProfile = ({ currentUser, onHomeClick, onProfileClick, onChangePassw
                                 <div className="card-header">
                                     <h3><FaPaperPlane /> آخر طلبات الاهتمام</h3>
                                 </div>
-                                <div className="card-body">
-                                    {displayRequests.map((req) => (
-                                        <div key={req.id} className="request-item">
+<div className="card-body">
+                                    {interestRequests.length === 0 ? (
+                                        <p className="op-empty">لا توجد طلبات اهتمام بعد.</p>
+                                    ) : interestRequests.map((req) => (
+<div key={req.id} className="request-item">
                                             <div className="request-user">
                                                 <img src={req.image} alt={req.property} className="req-img" />
-                                                <div>
-                                                    <h4>{req.property}</h4>
+                                                <div className="req-info">
+                                                    <div className="req-title-row">
+                                                        <h4>{req.property}</h4>
+                                                        <span className={`status-badge ${req.status}`}>
+                                                            {STATUS_MAP[req.status] || req.status}
+                                                        </span>
+                                                    </div>
                                                     <span className="req-date">{req.date}</span>
                                                 </div>
                                             </div>
-                                            <span className={`status-badge ${req.status}`}>
-                                                {STATUS_MAP[req.status] || req.status}
-                                            </span>
                                         </div>
                                     ))}
                                     <a href="#all-requests" className="view-all-link">عرض جميع الطلبات</a>

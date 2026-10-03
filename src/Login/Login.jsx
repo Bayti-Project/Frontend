@@ -23,14 +23,17 @@ async function fetchProfile() {
 }
 
 /* الملف الشخصي أحياناً ما بيرجّع role — وقتها نستنتج الدور من endpoint
-   عقارات المالك: لو ردّ 200 يعني الحساب مالك (حتى لو ما عنده عقارات)،
-   وأي رد تاني (403/401/404) يعني مستأجر */
+   عقارات المالك: لو ردّ 200 يعني الحساب مالك (حتى لو ما عنده عقارات).
+   403/404 يعني مستأجر. أما 401 فجلسة غير صالحة — مو مستأجر، وبيترك
+   الدور فارغ بد ما نلف المالك على صفحة المستأجر */
 async function probeOwnerRole() {
     try {
         const res = await apiFetch('/api/properties/mine/');
-        return res.ok ? 'owner' : 'tenant';
+        if (res.ok) return 'owner';
+        if (res.status === 403 || res.status === 404) return 'tenant';
+        return '';
     } catch {
-        return 'tenant';
+        return '';
     }
 }
 

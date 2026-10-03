@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { saveProperty, unsaveProperty, fetchSavedProperties } from "../services/api.js";
 
 const STORAGE_KEY = "bayti_saved_properties";
+
+const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
 
 function loadSaved() {
     try {
@@ -44,27 +47,105 @@ export function isSaved(id) {
     return savedItems.some((p) => String(p.id) === String(id));
 }
 
+/* الحفظ والإلغاء يروحون على الـAPI مع تحديث محلي فوري،efnرجع للنسخة السابقة
+   إذا الـAPI رفض الطلب. 400/404 معناها الحالة متطابقة أصلاً فبنعتبرها نجاح */
 export function addSaved(property) {
     const item = toSavedItem(property);
-    if (!item || item.id === undefined || item.id === null || item.id === "") return;
-    if (isSaved(item.id)) return;
+    if (!item || item.id === undefined || item.id === null || item.id === "") {
+        return Promise.resolve({ ok: false, message: "تعذر حفظ العقار" });
+    }
+    if (isSaved(item.id)) return Promise.resolve({ ok: true });
+
+    const previous = savedItems;
     savedItems = [...savedItems, item];
     persist();
+
+    if (!isLoggedIn()) return Promise.resolve({ ok: true });
+
+    return saveProperty(item.id)
+        .then(async (res) => {
+            if (res.ok) return { ok: true };
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 400) return { ok: true };
+            savedItems = previous;
+            persist();
+            return { ok: false, message: data?.message || "تعذر حفظ العقار" };
+        })
+        .catch(() => {
+            savedItems = previous;
+            persist();
+            return { ok: false, message: "تعذر الاتصال بالخادم" };
+        });
 }
 
 export function removeSaved(id) {
+    const previous = savedItems;
     savedItems = savedItems.filter((p) => String(p.id) !== String(id));
     persist();
+
+    if (!isLoggedIn()) return Promise.resolve({ ok: true });
+
+    return unsaveProperty(id)
+        .then(async (res) => {
+            if (res.ok) return { ok: true };
+            await res.json().catch(() => ({}));
+            if (res.status === 404) return { ok: true };
+            savedItems = previous;
+            persist();
+            return { ok: false, message: "تعذر إلغاء حفظ العقار" };
+        })
+        .catch(() => {
+            savedItems = previous;
+            persist();
+            return { ok: false, message: "تعذر الاتصال بالخادم" };
+        });
 }
 
 export function toggleSaved(property) {
-    if (isSaved(property?.id)) removeSaved(property.id);
-    else addSaved(property);
+    if (isSaved(property?.id)) return removeSaved(property.id);
+    return addSaved(property);
 }
 
-export function clearSaved() {
+/* ما في endpoint مسح للكل، فنلغي الحفظ طلب طلب */
+export async function clearSaved() {
+    const previous = savedItems;
+    const ids = previous.map((p) => p.id);
     savedItems = [];
     persist();
+
+    if (!isLoggedIn()) return { ok: true };
+
+    const results = await Promise.all(
+        ids.map((id) => unsaveProperty(id).catch(() => null))
+    );
+    const failed = results.filter((res) => res && !res.ok && res.status !== 404).length;
+    if (failed) {
+        savedItems = previous;
+        persist();
+        return { ok: false, message: "تعذر إلغاء حفظ بعض العقارات" };
+    }
+    return { ok: true };
+}
+
+export async function syncSavedFromApi() {
+    if (!isLoggedIn()) return getSaved();
+
+    try {
+        const res = await fetchSavedProperties();
+        if (!res.ok) return getSaved();
+        const data = await res.json().catch(() => ({}));
+        const list = Array.isArray(data?.saved_properties) ? data.saved_properties : [];
+        savedItems = list
+            .map((entry) => {
+                const item = toSavedItem(entry?.property || entry);
+                return item ? { ...item, savedAt: entry?.created_at || null } : null;
+            })
+            .filter(Boolean);
+        persist();
+    } catch {
+        /* نخلي النسخة المحلية */
+    }
+    return getSaved();
 }
 
 export function subscribeSaved(cb) {
@@ -74,7 +155,11 @@ export function subscribeSaved(cb) {
 
 export function useSaved() {
     const [items, setItems] = useState(() => getSaved());
-    useEffect(() => subscribeSaved(() => setItems(getSaved())), []);
+    useEffect(() => {
+        const unsubscribe = subscribeSaved(() => setItems(getSaved()));
+        if (isLoggedIn()) syncSavedFromApi();
+        return unsubscribe;
+    }, []);
     return items;
 }
 

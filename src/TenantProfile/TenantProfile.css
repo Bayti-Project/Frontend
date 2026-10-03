@@ -43,6 +43,30 @@
     flex-shrink: 0;
 }
 
+/* اسم العقار + شارة الحالة بنفس السطر */
+.req-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.req-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.req-title-row h4 {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.req-title-row .status-badge {
+    flex-shrink: 0;
+}
+
 /* شارات حالة الطلب */
 .status-badge {
     padding: 0.2rem 0.55rem;

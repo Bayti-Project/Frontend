@@ -27,9 +27,17 @@ const PROPERTY_TYPES = [
 ];
 
 const SOCIALS = [
-  { label: "LinkedIn", href: "#", Icon: FaLinkedinIn },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/%D8%A8%D9%8A%D8%AA%D9%8A-%D9%84%D9%84%D8%B9%D9%82%D8%A7%D8%B1%D8%A7%D8%AA-%E2%80%94-bayti/home/?viewAsMember=true",
+    Icon: FaLinkedinIn,
+  },
   { label: "Instagram", href: "#", Icon: FaInstagram },
-  { label: "Facebook", href: "#", Icon: FaFacebookF },
+  {
+    label: "Facebook",
+    href: "https://www.facebook.com/profile.php?id=61594687505382&sk=directory_contact_info",
+    Icon: FaFacebookF,
+  },
 ];
 
 const EMAIL = "info@bayti.ps";
@@ -119,7 +127,17 @@ export default function LandingFooter() {
             <h4 className="sf-footer__follow">تابعنا على</h4>
             <div className="sf-footer__social">
               {SOCIALS.map(({ label, href, Icon }) => (
-                <a key={label} href={href} aria-label={label}>
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  {...(href === "#"
+                    ? { "aria-disabled": "true", onClick: (e) => e.preventDefault() }
+                    : {
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                      })}
+                >
                   <Icon />
                 </a>
               ))}

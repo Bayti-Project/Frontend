@@ -12,6 +12,7 @@ import {
   FaTimes,
   FaHome,
 } from "react-icons/fa";
+import { fetchShareLink } from "../services/api.js";
 import { resolveMediaUrl } from "../services/api.js";
 import "./SharePropertyModal.css";
 
@@ -88,13 +89,33 @@ async function writeToClipboard(text) {
 }
 
 function ShareDialog({ property, onClose }) {
-  const [copied, setCopied] = useState(false);
+const [copied, setCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState(() =>
+    property?.id ? `${window.location.origin}/property/${property.id}` : ""
+  );
   const copyTimerRef = useRef(null);
 
-  const shareUrl = useMemo(() => {
-    if (!property?.id) return "";
-    const base = typeof window !== "undefined" ? window.location.origin : "";
-    return `${base}/property/${property.id}`;
+  /* رابط المشاركة الرسمي من GET /api/properties/{id}/share/ — بدون توكن.
+     إذا الـAPI ما ردّ (أو العقار مؤجر 400) بنرجع للرابط المبني محلياً */
+  useEffect(() => {
+    if (!property?.id) return undefined;
+    let active = true;
+    const fallback = `${window.location.origin}/property/${property.id}`;
+
+    fetchShareLink(property.id)
+      .then(async (res) => {
+        if (!res.ok) return fallback;
+        const data = await res.json().catch(() => ({}));
+        return data?.link || fallback;
+      })
+      .catch(() => fallback)
+      .then((url) => {
+        if (active) setShareUrl(url);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [property?.id]);
 
   const shareText = useMemo(() => {

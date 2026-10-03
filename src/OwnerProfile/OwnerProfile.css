@@ -397,6 +397,14 @@ body {
     gap: 0.3rem;
 }
 
+.op-empty {
+    margin: 0;
+    padding: 18px 12px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
 .op-req-avatar {
     width: 30px;
     height: 30px;

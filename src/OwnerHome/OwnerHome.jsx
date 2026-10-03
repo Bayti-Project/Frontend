@@ -137,6 +137,7 @@ export default function OwnerHome() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [toast, setToast] = useState(null);
     const [deleteError, setDeleteError] = useState("");
+    const [statusError, setStatusError] = useState("");
     const toastTimerRef = useRef(null);
 
     // ─── 1. جلب العقارات ───
@@ -216,23 +217,48 @@ export default function OwnerHome() {
     };
 
     // ─── 3. تغيير حالة العقار ───
+    /* PATCH /api/properties/{id}/status/ — المسار مع trailing slash
+       (عكس endpoint طلب الاهتمام) · body: { status } · القيم: available|reserved|rented
+       كان بيروح على /api/properties/{id}/ فالتغيير ما بينحفظ */
     const handleStatusChange = async (property, newStatus) => {
-        const prevStatus = property.status;
+        const prevStatus = property.status || "available";
+
+        // تحديث متفائل — بيرجع للقيمة السابقة إذا الـAPI رفض
         setProperties((prev) =>
             prev.map((p) => (p.id === property.id ? { ...p, status: newStatus } : p))
         );
 
         try {
-            const res = await apiFetch(`/api/properties/${property.id}/`, {
+            const res = await apiFetch(`/api/properties/${property.id}/status/`, {
                 method: "PATCH",
                 json: { status: newStatus },
             });
-            if (!res.ok) throw new Error("فشل تحديث الحالة");
-        } catch {
-            // التراجع عن التعديل في حال فشل الطلب
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                const serverMsg = Array.isArray(data?.status)
+                    ? data.status[0]
+                    : typeof data?.detail === "string"
+                        ? data.detail
+                        : "";
+                if (res.status === 401) throw new Error("انتهت الجلسة، يرجى تسجيل الدخول من جديد.");
+                if (res.status === 403) throw new Error("ليس لديك صلاحية لتغيير حالة هذا العقار");
+                if (res.status === 404) throw new Error("العقار غير موجود");
+                if (res.status === 400) throw new Error(serverMsg || "قيمة الحالة غير صحيحة");
+                throw new Error(serverMsg || "فشل تحديث الحالة، يرجى المحاولة لاحقاً");
+            }
+
+            // مصدر الحقيقة هو رد الـAPI
+            const saved = data?.status || newStatus;
+            setProperties((prev) =>
+                prev.map((p) => (p.id === property.id ? { ...p, status: saved } : p))
+            );
+        } catch (err) {
             setProperties((prev) =>
                 prev.map((p) => (p.id === property.id ? { ...p, status: prevStatus } : p))
             );
+            setStatusError(err.message);
         }
     };
 
@@ -249,6 +275,13 @@ export default function OwnerHome() {
                         إضافة عقار
                     </button>
                 </div>
+
+                {/* ─── خطأ تغيير الحالة ─── */}
+                {statusError && (
+                    <p className="owner-status-error">
+                        <WarnIcon /> {statusError}
+                    </p>
+                )}
 
                 {/* ─── شريط البحث والفلترة ─── */}
                 <div className="owner-search-row">

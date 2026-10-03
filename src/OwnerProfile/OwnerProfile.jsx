@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './OwnerProfile.css';
 import Navbar from '../components/Navbar';
-import { apiFetch, normalizeUser, resolveMediaUrl } from '../services/api.js';
+import { apiFetch, normalizeUser, resolveMediaUrl, getPropertyImagePath } from '../services/api.js';
 import { notifyUserChange, persistUser } from '../state/currentUser.js';
 import defaultAvatar from '../components/default-avatar.svg';
 import LandingFooter from '../components/LandingFooter';
@@ -9,6 +9,29 @@ import {
     FaBuilding, FaHome, FaKey, FaUsers, FaPlus, FaEdit,
     FaCheckCircle, FaUserCheck, FaCalendarAlt, FaSpinner
 } from 'react-icons/fa';
+
+const formatPrice = (value) => `${Number(value || 0).toLocaleString('en-US')} ₪`;
+
+function mapRecentProperty(item) {
+    return {
+        id: item?.id,
+        title: item?.title || 'عقار',
+        location: item?.address || '',
+        price: formatPrice(item?.price),
+        image: resolveMediaUrl(getPropertyImagePath(item)) || defaultAvatar,
+    };
+}
+
+function mapRecentRequest(item) {
+    return {
+        id: item?.id,
+        name: item?.tenant_name || item?.tenant_full_name || 'مستأجر',
+        property: item?.property_title || '',
+        date: item?.created_at ? new Date(item.created_at).toLocaleDateString('ar-EG') : '',
+        status: item?.status || 'pending',
+        avatar: resolveMediaUrl(item?.tenant_image || item?.tenant_avatar || '') || defaultAvatar,
+    };
+}
 
 const OwnerProfile = ({
     currentUser,
@@ -33,7 +56,8 @@ const OwnerProfile = ({
         whatsapp: currentUser?.whatsapp || '',
         role: currentUser?.role || 'مالك',
         joinedYear: currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2023',
-        avatar: currentUser?.avatar || defaultAvatar
+        avatar: currentUser?.avatar || defaultAvatar,
+        isVerified: false
     });
 
     const [statsData, setStatsData] = useState({
@@ -53,79 +77,109 @@ const OwnerProfile = ({
             return;
         }
 
+        let cancelled = false;
         setLoading(true);
-        apiFetch('/api/auth/profile/')
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                if (!data) return;
 
-                const u = normalizeUser(data);
-                const year = data.created_at || data.createdAt
-                    ? new Date(data.created_at || data.createdAt).getFullYear()
-                    : '2024';
+        const applyUser = (raw) => {
+            const u = normalizeUser(raw || {});
+            const created = raw?.created_at || raw?.createdAt;
+            setUserData((prev) => ({
+                ...prev,
+                name: u.name || prev.name,
+                email: u.email || prev.email,
+                phone: u.phone || prev.phone,
+                whatsapp: u.whatsapp || prev.whatsapp,
+                role: u.role || prev.role,
+                joinedYear: created ? new Date(created).getFullYear() : prev.joinedYear,
+                avatar: u.avatar || prev.avatar,
+                isVerified: Boolean(raw?.is_verified),
+            }));
 
-                setUserData((prev) => ({
-                    ...prev,
-                    name: u.name || prev.name,
-                    email: u.email || prev.email,
-                    phone: u.phone || prev.phone,
-                    whatsapp: u.whatsapp || prev.whatsapp,
-                    role: u.role || prev.role,
-                    joinedYear: year,
-                    avatar: u.avatar || prev.avatar,
-                }));
+            const saved = JSON.parse(localStorage.getItem('bayti_user') || '{}');
+            localStorage.setItem(
+                'bayti_user',
+                JSON.stringify({
+                    ...saved,
+                    name: u.name,
+                    email: u.email,
+                    phone: u.phone,
+                    whatsapp: u.whatsapp,
+                    /* لازم نحافظ على الدور المحفوظ إذا الـAPI ما رجّع role،
+                       وإلا بيتمسح وبنفقد التوجيه (المالك بيصير مستأجر) */
+                    role: u.role || saved.role,
+                    avatar: u.avatar
+                })
+            );
+            notifyUserChange();
+        };
 
-                // إمكانية تحديث العقارات والطلبات من الاستجابة إن وجدت في API
-                if (data.properties) setRecentProperties(data.properties);
-                if (data.stats) setStatsData(data.stats);
-                if (data.requests) setInterestRequests(data.requests);
+        (async () => {
+            /* endpoint واحد: المستخدم + الإحصائيات + آخر 3 عقارات وطلبات */
+            try {
+                const res = await apiFetch('/api/auth/owner/profile/');
+                if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (cancelled) return;
 
-                // تحديث بيانات المستخدم في LocalStorage
-                const saved = JSON.parse(localStorage.getItem('bayti_user') || '{}');
-                localStorage.setItem(
-                    'bayti_user',
-                    JSON.stringify({
-                        ...saved,
-                        name: u.name,
-                        email: u.email,
-                        phone: u.phone,
-                        whatsapp: u.whatsapp,
-                        role: u.role,
-                        avatar: u.avatar
-                    })
-                );
-                notifyUserChange();
-            })
-            .catch((err) => console.error("Error fetching profile:", err))
-            .finally(() => setLoading(false));
-    }, []);
+                    applyUser(data.user);
+                    setStatsData({
+                        published: data.stats?.total_properties ?? 0,
+                        active: data.stats?.active_properties ?? 0,
+                        rented: data.stats?.rented_properties ?? 0,
+                        requests: data.stats?.total_interest_requests ?? 0,
+                    });
+                    setRecentProperties(
+                        (Array.isArray(data.recent_properties) ? data.recent_properties : [])
+                            .map(mapRecentProperty)
+                    );
+                    setInterestRequests(
+                        (Array.isArray(data.recent_interest_requests) ? data.recent_interest_requests : [])
+                            .map(mapRecentRequest)
+                    );
+                    return;
+                }
+            } catch {
+                /* بنكمل بالطريقة القديمة */
+            }
 
-    /* طلبات الاهتمام على عقارات المالك — endpoint خاص بالمالك
-       GET /api/owner/interest-requests → [{ id, tenant, property, owner, status, created_at }] */
-    useEffect(() => {
-        const token = localStorage.getItem('access_token');
-        if (!token) return;
+            /* fallback لحد ما ينشر /api/auth/owner/profile/ على الباكاند */
+            const [profileRes, reqRes, mineRes] = await Promise.all([
+                apiFetch('/api/auth/profile/'),
+                apiFetch('/api/owner/interest-requests'),
+                apiFetch('/api/properties/mine/'),
+            ]);
+            if (cancelled) return;
 
-        apiFetch('/api/owner/interest-requests')
-            .then((res) => (res.ok ? res.json() : []))
-            .then((data) => {
-                const list = Array.isArray(data) ? data : data?.results || [];
-                if (!Array.isArray(list) || list.length === 0) return;
+            if (profileRes.ok) applyUser(await profileRes.json().catch(() => ({})));
 
-                setInterestRequests(
-                    list.map((item) => ({
-                        id: item.id,
-                        name: item.tenant_name || item.tenant_full_name || `مستأجر #${item.tenant ?? '—'}`,
-                        property: item.property_title || `عقار #${item.property ?? '—'}`,
-                        date: item.created_at
-                            ? new Date(item.created_at).toLocaleDateString('ar-EG')
-                            : '',
-                        status: item.status || 'pending',
-                        avatar: item.tenant_avatar || item.tenant_image || '',
-                    }))
-                );
-            })
-            .catch((err) => console.error('Error fetching interest requests:', err));
+            if (reqRes.ok) {
+                const reqData = await reqRes.json().catch(() => ({}));
+                const reqList = Array.isArray(reqData) ? reqData : reqData?.results || [];
+                if (Array.isArray(reqList) && reqList.length) {
+                    setInterestRequests(reqList.slice(0, 3).map(mapRecentRequest));
+                }
+            }
+
+            if (mineRes.ok) {
+                const mineData = await mineRes.json().catch(() => ({}));
+                const mineList = Array.isArray(mineData) ? mineData : mineData?.results || [];
+                if (Array.isArray(mineList)) {
+                    setRecentProperties(
+                        mineList
+                            .slice()
+                            .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+                            .slice(0, 3)
+                            .map(mapRecentProperty)
+                    );
+                }
+            }
+        })().finally(() => {
+            if (!cancelled) setLoading(false);
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     // دالة لتحديث الصورة الشخصية عند التغيير
@@ -185,20 +239,6 @@ const OwnerProfile = ({
         { id: 4, title: 'طلبات الاهتمام', count: statsData.requests, icon: <FaUsers />, color: '#e11d48', bg: '#ffe4e6' },
     ];
 
-    // قائمة افتراضية للعقارات في حال لم توجد داتا راجعة من API
-    const displayProperties = recentProperties.length > 0 ? recentProperties : [
-        { id: 1, title: 'شقة فاخرة في الرمال', location: 'الرمال - بالقرب من البحر', price: '1,800 شيكل', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=200&q=80' },
-        { id: 2, title: 'منزل في النصر', location: 'النصر - شارع الوحدة', price: '2,500 شيكل', image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=200&q=80' },
-        { id: 3, title: 'شقة في الشيخ رضوان', location: 'الشيخ رضوان - شارع الشهداء', price: '1,400 شيكل', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&q=80' },
-    ];
-
-    // قائمة افتراضية لطلبات الاهتمام
-    const displayRequests = interestRequests.length > 0 ? interestRequests : [
-        { id: 1, name: 'خالد محمد', property: 'شقة في الرمال', date: '20 مايو 2024', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80' },
-        { id: 2, name: 'محمود محمد', property: 'منزل في النصر', date: '18 مايو 2024', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&q=80' },
-        { id: 3, name: 'سامي محمود', property: 'شقة في الشيخ رضوان', date: '19 مايو 2024', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80' },
-    ];
-
     return (
         <div className="owner-profile-app" dir="rtl">
             {/* ناف بار موحد */}
@@ -247,7 +287,7 @@ const OwnerProfile = ({
                                     )}
                                 </div>
                                 <div className="user-details">
-                                    <h2>{userData.name} <FaCheckCircle className="verified-badge" /></h2>
+                                    <h2>{userData.name} {userData.isVerified && <FaCheckCircle className="verified-badge" />}</h2>
                                     <p className="email">{userData.email}</p>
 
                                     <div className="badges-row">
@@ -286,7 +326,9 @@ const OwnerProfile = ({
                                     <h3><FaHome /> أحدث العقارات المضافة</h3>
                                 </div>
                                 <div className="card-body">
-                                    {displayProperties.map((item) => (
+                                    {recentProperties.length === 0 ? (
+                                        <p className="op-empty">لا توجد عقارات مضافة بعد.</p>
+                                    ) : recentProperties.map((item) => (
                                         <div key={item.id} className="property-item">
                                             <img src={item.image} alt={item.title} className="prop-img" />
                                             <div className="prop-details">
@@ -305,7 +347,9 @@ const OwnerProfile = ({
                                     <h3><FaUsers /> آخر طلبات الاهتمام</h3>
                                 </div>
                                 <div className="card-body">
-                                    {displayRequests.map((req) => (
+                                    {interestRequests.length === 0 ? (
+                                        <p className="op-empty">لا توجد طلبات اهتمام بعد.</p>
+                                    ) : interestRequests.map((req) => (
                                         <div key={req.id} className="op-request-item">
                                             <div className="op-request-user">
                                                 <img src={req.avatar} alt={req.name} className="op-req-avatar" />
