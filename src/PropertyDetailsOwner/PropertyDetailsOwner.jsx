@@ -55,38 +55,44 @@ const mockProperty = {
 
 /* -------------------------------------------------------------------------- */
 /*  طلب الاهتمام (Interest request)                                            */
-/*  ⚠️ المسار غير معتمد من الـ Backend بعد — كل المسارات المرشحة ترجع 404      */
-/*  (`/api/properties/{id}/interest/` و `/api/interests/` و `/api/requests/`)    */
+/*  ⚠️ المسار الحقيقي (US-17) — بدون trailing slash، مع slash بيرجع 404      */
+/*  (`/api/properties/{id}/interest-request`)                                      */
+/*  الشيفرة مربوطة فعلياً — الباك اند فيه POST فقط للطلب                          */
 /*  عدّل هذا المسار وشكل الاستجابة ليطابق الـ Backend عندك                      */
-/*  POST   → إرسال طلب اهتمام                                                  */
-/*  GET    → جلب حالة الطلب: { status: "pending" | "accepted", owner_phone }    */
-/*  DELETE → إلغاء الطلب                                                       */
+/*  POST   → إرسال طلب اهتمام (201 · body فاضي · للـtenant فقط)                  */
+/*  GET    → ❌ ما موجود بالـbackend — ما في طريقة للمستأجر يتابع حالة طلبه        */
+/*  DELETE → ❌ ما موجود بالـbackend — ما في إلغاء للطلب                           */
 /* -------------------------------------------------------------------------- */
-const interestUrl = (propertyId) => `/api/properties/${propertyId}/interest/`;
-const INTEREST_POLL_MS = 15000;
+const interestUrl = (propertyId) => `/api/properties/${propertyId}/interest-request`;
 
 const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
 
+/* الباك اند بيرجّع رسائل إنجليزية — بنترجمها قبل ما توصل للمستخدم */
+const INTEREST_ERROR_AR = {
+    "Authentication credentials were not provided.": "انتهت الجلسة، يرجى تسجيل الدخول من جديد.",
+    "Only tenants can send interest requests.": "طلب الاهتمام متاح للمستأجرين فقط.",
+    "You have already sent an interest request for this property.": "لديك طلب اهتمام على هذا العقار مسبقاً.",
+    "This property is rented and cannot receive interest requests.": "هذا العقار مؤجر حالياً ولا يستقبل طلبات اهتمام.",
+    "You cannot send an interest request for your own property.": "لا يمكنك إرسال طلب اهتمام على عقارك.",
+};
+
 /* رسائل عربية واضحة بدل رسالة عامة واحدة، حتى يبقى سبب الفشل ظاهراً للمستخدم */
 function describeInterestError(status, data) {
-    const serverMsg =
-        (typeof data?.detail === "string" && data.detail) ||
-        (typeof data?.message === "string" && data.message) ||
-        "";
-    if (serverMsg) return serverMsg;
+    const detail = typeof data?.detail === "string" ? data.detail : "";
+    if (INTEREST_ERROR_AR[detail]) return INTEREST_ERROR_AR[detail];
     if (status === 401) return "انتهت الجلسة، يرجى تسجيل الدخول من جديد.";
-    if (status === 403) return "لا تملك صلاحية إرسال طلب اهتمام على هذا العقار.";
-    if (status === 404) return "خدمة طلب الاهتمام غير متاحة حالياً، جرّبتو لاحقاً.";
-    if (status === 409) return "لديك طلب اهتمام على هذا العقار مسبقاً.";
+    if (status === 403) return "طلب الاهتمام متاح للمستأجرين فقط.";
+    if (status === 400) return detail || "تعذر إرسال الطلب، يرجى المحاولة مرة أخرى.";
+    if (status === 404) return "العقار غير موجود.";
     if (status >= 500) return "خطأ في الخادم، حاول مرة أخرى بعد قليل.";
-    return "تعذر إرسال الطلب، حاول مرة أخرى.";
+    return detail || "تعذر إرسال الطلب، حاول مرة أخرى.";
 }
 
+/* رد الـPOST: { id, tenant, property, owner, status: "pending", created_at, updated_at }
+   ما في endpoint للحالة، فبنعتبر أي رد ناجح = pending */
 function parseInterest(data) {
     const raw = String(data?.status || "").toLowerCase();
-    const phone =
-        data?.owner_phone || data?.owner?.phone || data?.owner?.phone_number || "";
-    if (raw === "accepted" || raw === "approved") return { status: "accepted", phone };
+    if (raw === "accepted" || raw === "approved") return { status: "accepted", phone: "" };
     if (raw === "pending") return { status: "pending", phone: "" };
     return { status: "none", phone: "" };
 }
@@ -564,7 +570,6 @@ function ContactCard({
     onInterest,
     onMessage,
     onCall,
-    onCancel,
     onWhatsApp,
 }) {
     /* الحالة 2: تم إرسال الطلب وبانتظار موافقة المالك */
@@ -623,14 +628,11 @@ function ContactCard({
                     </span>
                 </div>
 
-                <button className="pdo-btn pdo-btn--primary" onClick={onCall} disabled={!phone}>
-                    اتصل بالمالك
-                    <Icon name="phone" size={16} />
-                </button>
-                <button className="pdo-btn pdo-btn--outline pdo-btn--block" onClick={onCancel}>
-                    الغاء الطلب
-                </button>
-                <button className="pdo-btn pdo-btn--whatsapp" onClick={onWhatsApp} disabled={!phone}>
+<button className="pdo-btn pdo-btn--primary" onClick={onCall} disabled={!phone}>
+                اتصل بالمالك
+                <Icon name="phone" size={16} />
+            </button>
+            <button className="pdo-btn pdo-btn--whatsapp" onClick={onWhatsApp} disabled={!phone}>
                     محادثة عبر الواتساب
                     <Icon name="whatsapp" size={16} />
                 </button>
@@ -851,44 +853,8 @@ export default function PropertyDetailsOwner() {
         };
     }, [id]);
 
-    /* جلب حالة الطلب الحالية (إن كان المستخدم مسجلاً وأرسل طلباً سابقاً) */
-    useEffect(() => {
-        if (!isLoggedIn() || isMyProperty) return undefined;
-        let active = true;
-        (async () => {
-            try {
-                const res = await apiFetch(interestUrl(id));
-                if (!res.ok) return;
-                const parsed = parseInterest(await res.json());
-                if (active) setInterest(parsed);
-            } catch {
-                /* لا يوجد طلب سابق */
-            }
-        })();
-        return () => {
-            active = false;
-        };
-    }, [id, isMyProperty]);
-
-    /* أثناء "قيد المعالجة": فحص دوري لمعرفة إن وافق المالك */
-    useEffect(() => {
-        if (interest.status !== "pending") return undefined;
-        let active = true;
-        const timer = setInterval(async () => {
-            try {
-                const res = await apiFetch(interestUrl(id));
-                if (!res.ok) return;
-                const parsed = parseInterest(await res.json());
-                if (active && parsed.status !== "pending") setInterest(parsed);
-            } catch {
-                /* نحاول مرة أخرى في الدورة القادمة */
-            }
-        }, INTEREST_POLL_MS);
-        return () => {
-            active = false;
-            clearInterval(timer);
-        };
-    }, [id, interest.status]);
+    /* ما في GET للحالة ولا DELETE للإلغاء بالـbackend حالياً، فما في طلب يُرسل
+   عند فتح الصفحة ولا فحص دوري. الحالة بتتحدث مرة واحدة بعد POST بنجاح. */
 
     const closeLightbox = () => setLightboxIndex(null);
     const nextImage = () =>
@@ -910,6 +876,7 @@ export default function PropertyDetailsOwner() {
         setSubmitting(true);
         setInterestError("");
         try {
+            /* body فاضي — الـendpoint بيتوقع Authorization + لا شي تاني */
             const res = await apiFetch(interestUrl(id), { method: "POST" });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
@@ -917,8 +884,10 @@ export default function PropertyDetailsOwner() {
                 setInterestError(describeInterestError(res.status, data));
                 return;
             }
-            const parsed = parseInterest(data);
-            setInterest(parsed.status === "none" ? { status: "pending", phone: "" } : parsed);
+            /* 201 Created — الرد{bj status: "pending" } */
+            setInterest(parseInterest(data).status === "none"
+                ? { status: "pending", phone: "" }
+                : parseInterest(data));
         } catch (err) {
             console.error("[interest] استثناء أثناء الإرسال", err);
             setInterestError("تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.");
@@ -944,15 +913,6 @@ export default function PropertyDetailsOwner() {
     const onWhatsApp = () => {
         const digits = String(ownerPhone || "").replace(/\D/g, "");
         if (digits) window.open(`https://wa.me/${digits}`, "_blank", "noopener");
-    };
-
-    const onCancel = async () => {
-        try {
-            const res = await apiFetch(interestUrl(id), { method: "DELETE" });
-            if (res.ok || res.status === 404) setInterest({ status: "none", phone: "" });
-        } catch {
-            /* نُبقي الحالة كما هي إذا فشل الإلغاء */
-        }
     };
 
     return (
@@ -1070,7 +1030,6 @@ export default function PropertyDetailsOwner() {
                             onInterest={onInterest}
                             onMessage={onMessage}
                             onCall={onCall}
-                            onCancel={onCancel}
                             onWhatsApp={onWhatsApp}
                         />
                     )}

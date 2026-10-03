@@ -100,6 +100,34 @@ const OwnerProfile = ({
             .finally(() => setLoading(false));
     }, []);
 
+    /* طلبات الاهتمام على عقارات المالك — endpoint خاص بالمالك
+       GET /api/owner/interest-requests → [{ id, tenant, property, owner, status, created_at }] */
+    useEffect(() => {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        apiFetch('/api/owner/interest-requests')
+            .then((res) => (res.ok ? res.json() : []))
+            .then((data) => {
+                const list = Array.isArray(data) ? data : data?.results || [];
+                if (!Array.isArray(list) || list.length === 0) return;
+
+                setInterestRequests(
+                    list.map((item) => ({
+                        id: item.id,
+                        name: item.tenant_name || item.tenant_full_name || `مستأجر #${item.tenant ?? '—'}`,
+                        property: item.property_title || `عقار #${item.property ?? '—'}`,
+                        date: item.created_at
+                            ? new Date(item.created_at).toLocaleDateString('ar-EG')
+                            : '',
+                        status: item.status || 'pending',
+                        avatar: item.tenant_avatar || item.tenant_image || '',
+                    }))
+                );
+            })
+            .catch((err) => console.error('Error fetching interest requests:', err));
+    }, []);
+
     // دالة لتحديث الصورة الشخصية عند التغيير
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
