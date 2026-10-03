@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useParams } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import LandingFooter from "./components/LandingFooter";
 import AuthPromptModal from "./components/AuthPromptModal";
-import { resolveMediaUrl, clearCredentials } from "./services/api.js";
+import { resolveMediaUrl, clearCredentials, isOwnerRole, isTenantRole } from "./services/api.js";
 import defaultAvatar from "./components/default-avatar.svg";
 import "./styles/style.css";
 
@@ -67,16 +67,18 @@ export default function App() {
     } catch {
       saved = null;
     }
+    /* ما في fallback ثابت لـrole — لو ما في مستخدم محفوظ بيضل "" (زائر)
+      Fallback "مالك" كان بيسبّب المستأجر يفتح صفحات المالك */
     return {
-      name: saved?.name || "أحمد محمد",
-      email: saved?.email || "ahmed.mohamed@example.com",
-      role: saved?.role || "مالك",
-      accountType: saved?.accountType || "فرد",
-      phone: saved?.phone || "0598 123 456",
-      createdAt: "2023-01-01",
+      name: saved?.name || "",
+      email: saved?.email || "",
+      role: saved?.role || "",
+      accountType: saved?.accountType || "",
+      phone: saved?.phone || "",
+      createdAt: saved?.createdAt || "",
       avatar: resolveMediaUrl(saved?.avatar) || defaultAvatar,
-      city: "غزة - الرمال",
-      bio: "صاحب عقارات في قطاع غزة",
+      city: saved?.city || "",
+      bio: saved?.bio || "",
     };
   });
 
@@ -85,19 +87,14 @@ export default function App() {
     onSearchClick: () => navigate("/search"),
     /* صفحة الطلبات تختلف حسب دور المستخدم: للمالك "طلبات الاهتمام"، وللمستأجر "طلباتي" */
     onRequestsClick: () => {
-      const role = user.role || "";
-      const isOwner = role.includes("مالك") || role === "owner";
-      navigate(isOwner ? "/owner-requests" : "/my-requests");
+      navigate(isOwnerRole(user.role) ? "/owner-requests" : "/my-requests");
     },
     onSavedClick: () => navigate("/saved"),
     onHomeClick: () => {
       setView("password");
-      const role = user.role || "";
-      const isTenant = role.includes("مستأجر") || role === "tenant";
-      const isOwner = role.includes("مالك") || role === "owner";
-      if (isTenant) navigate("/home-tenant");
-      else if (isOwner) navigate("/home-owner");
-      else navigate("/home");
+      if (isTenantRole(user.role)) navigate("/home-tenant");
+      else if (isOwnerRole(user.role)) navigate("/home-owner");
+      else navigate("/");
     },
     onProfileClick: () => {
       try {
@@ -120,22 +117,22 @@ export default function App() {
       // مهم: بدون مسح بيانات الاعتماد يبقى refreshTokens يعيد تسجيل الدخول تلقائياً
       clearCredentials();
       setUser({
-        name: "أحمد محمد",
-        email: "ahmed.mohamed@example.com",
-        role: "مالك",
-        accountType: "فرد",
-        phone: "0598 123 456",
-        createdAt: "2023-01-01",
+        name: "",
+        email: "",
+        role: "",
+        accountType: "",
+        phone: "",
+        createdAt: "",
         avatar: defaultAvatar,
-        city: "غزة - الرمال",
-        bio: "صاحب عقارات في قطاع غزة",
+        city: "",
+        bio: "",
       });
       navigate("/login");
     },
   };
 
   if (view === "profile") {
-    const isOwner = (user.role || "").includes("مالك");
+    const isOwner = isOwnerRole(user.role);
     const profileProps = {
       currentUser: user,
       ...navProps,

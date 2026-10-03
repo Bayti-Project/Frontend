@@ -5,6 +5,7 @@ import logoImg from "./logo.png";
 import defaultAvatar from "./default-avatar.svg";
 import { useStoredUser, useUserAvatar } from "../state/currentUser.js";
 import { useUnreadNotificationsCount } from "../state/notifications.js";
+import { isOwnerRole } from "../services/api.js";
 
 const NAV_ITEMS = [
   { id: "home", label: "الرئيسية", action: "onHomeClick", exact: true, paths: ["/", "/home", "/home-tenant", "/home-owner"] },
@@ -32,7 +33,7 @@ export default function Navbar({
   const { pathname } = useLocation();
   const unreadCount = useUnreadNotificationsCount();
 
-  const isOwner = user?.role === "owner" || user?.role === "مالك عقار";
+  const isOwner = isOwnerRole(user?.role);
 
   // «لوحة التحكم» بتظهر للمالك فقط
   const items = useMemo(

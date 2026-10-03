@@ -153,13 +153,37 @@ export function normalizeUser(u) {
     role:
       u?.role === 'owner' ? 'مالك عقار'
         : u?.role === 'tenant' ? 'مستأجر'
-          : u?.role || 'مستأجر',
+          /* بدون fallback "مستأجر" — كان بيخلي صفحة المالك تعرض "مستأجر"
+             لما الـAPI ما يرجّع role، والـcaller بيستخدم قيمته المحفوظة */
+          : u?.role || '',
     avatar: resolveMediaUrl(u?.profile_image || u?.avatar || ''),
   };
 }
 
 export function roleToApi(value) {
   return value === 'مالك عقار' ? 'owner' : 'tenant';
+}
+
+/* فحص الدور من مصدر واحد — كان مكرر بأربع ملفات وكل نسخةفحصت بشكل مختلف،
+   فالمستخدم المستأجر كان بياخد صفحات المالك */
+const OWNER_ROLES = new Set(['owner', 'مالك', 'مالك عقار', 'مالك عقارات']);
+const TENANT_ROLES = new Set(['tenant', 'مستأجر', 'مستاجر', 'مستأجر عقار']);
+
+export function isOwnerRole(role) {
+  const value = String(role ?? '').trim().toLowerCase();
+  return OWNER_ROLES.has(value);
+}
+
+export function isTenantRole(role) {
+  const value = String(role ?? '').trim().toLowerCase();
+  return TENANT_ROLES.has(value);
+}
+
+/* الدور يقدر ييجي من الـAPI بالإنجليزية أو من localStorage بالعربية */
+export function resolveRole(role) {
+  if (isOwnerRole(role)) return 'owner';
+  if (isTenantRole(role)) return 'tenant';
+  return '';
 }
 
 export function accountTypeToApi(value) {

@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { apiFetch, resolveMediaUrl } from "../services/api";
+import { apiFetch, resolveMediaUrl, isOwnerRole } from "../services/api";
 import { useStoredUser, useUserAvatar } from "../state/currentUser";
 import defaultAvatar from "../components/default-avatar.svg";
 import "./PropertyDetailsOwner.css";
@@ -794,8 +794,7 @@ export default function PropertyDetailsOwner() {
         String(viewer.id) === String(property.owner.id);
 
     const viewerRole = viewer?.role || "";
-    const roleAllowsOwnerView =
-        !viewerRole || viewerRole.includes("مالك") || viewerRole === "owner";
+    const roleAllowsOwnerView = !viewerRole || isOwnerRole(viewerRole);
     const isOwnerRoute = location.pathname.startsWith("/property-owner/");
 
     const isMyProperty = matchesOwnerId || (isOwnerRoute && roleAllowsOwnerView);

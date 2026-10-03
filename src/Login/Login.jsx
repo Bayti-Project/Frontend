@@ -4,10 +4,53 @@ import { FaApple, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
 import heroImg from './hero.jpg';
-import { API_HOST, mapApiError, normalizeUser, storeCredentials } from '../services/api.js';
+import { API_HOST, mapApiError, normalizeUser, storeCredentials, resolveRole, apiFetch } from '../services/api.js';
 
 function extractErrorMessage(data) {
     return mapApiError(data);
+}
+
+async function fetchProfile() {
+    try {
+        const res = await apiFetch('/api/auth/profile/');
+        if (!res.ok) return null;
+        const data = await res.json().catch(() => null);
+        const raw = data?.user || data;
+        return raw && typeof raw === 'object' ? raw : null;
+    } catch {
+        return null;
+    }
+}
+
+/* الملف الشخصي أحياناً ما بيرجّع role — وقتها نستنتج الدور من endpoint
+   عقارات المالك: لو ردّ 200 يعني الحساب مالك (حتى لو ما عنده عقارات)،
+   وأي رد تاني (403/401/404) يعني مستأجر */
+async function probeOwnerRole() {
+    try {
+        const res = await apiFetch('/api/properties/mine/');
+        return res.ok ? 'owner' : 'tenant';
+    } catch {
+        return 'tenant';
+    }
+}
+
+/* لازم الدور ينحدد بشكل مؤكد — وإلا "bayti_user" ما بينكتب
+   والمستخدم بيطلع لصفحة الزائر بدل صفحته */
+async function resolveLoggedInUser(email) {
+    const profile = await fetchProfile();
+    const role = resolveRole(profile?.role);
+
+    if (role) return { ...profile, role };
+
+    const probed = await probeOwnerRole();
+    return { ...(profile || {}), email: profile?.email || email, role: probed };
+}
+
+function homePathFor(role) {
+    const resolved = resolveRole(role);
+    if (resolved === 'tenant') return '/home-tenant';
+    if (resolved === 'owner') return '/home-owner';
+    return '/';
 }
 
 function Login() {
@@ -52,9 +95,13 @@ function Login() {
                 storeCredentials(email.trim(), password);
             }
 
-            if (data.user) {
-                localStorage.setItem('bayti_user', JSON.stringify(normalizeUser ? normalizeUser(data.user) : data.user));
-            }
+            /* الـresponse ما بيحتوي user دائماً — بنجيب الدور من /api/auth/profile/
+               وإذا ما رجّع، بنستنتجه من endpoint عقارات المالك */
+            const roleFromLogin = data.user ? resolveRole(data.user.role) : '';
+            const source = roleFromLogin ? data.user : await resolveLoggedInUser(email.trim());
+
+            const loggedUser = normalizeUser(source);
+            localStorage.setItem('bayti_user', JSON.stringify(loggedUser));
 
             const redirectTo = location.state?.redirectTo;
             if (redirectTo) {
@@ -62,8 +109,7 @@ function Login() {
                 return;
             }
 
-            const userRole = data.user?.role;
-            navigate(userRole === 'tenant' ? '/home-tenant' : userRole === 'owner' ? '/home-owner' : '/home');
+            navigate(homePathFor(loggedUser.role));
         } catch (err) {
             console.error('Login error:', err);
             setError('تعذر الاتصال بالخادم، تأكد من الاتصال بالإنترنت وحاول مرة أخرى.');
