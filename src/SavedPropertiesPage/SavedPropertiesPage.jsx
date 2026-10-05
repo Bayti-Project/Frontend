@@ -2,7 +2,6 @@ import { useState } from "react";
 import "./SavedPropertiesPage.css";
 import SharePropertyModal from "../components/SharePropertyModal";
 import { useSaved, addSaved, removeSaved, clearSaved } from "../state/savedProperties";
-import { hasPropertyImage } from "../services/api.js";
 import apartmentSeaView from "./apartment-sea-view.jpg";
 import villaExterior from "./villa-exterior.jpg";
 import officeSpace from "./office-space.jpg";
@@ -222,10 +221,10 @@ export default function SavedPropertiesPage({ onOpenDetails }) {
 
     const removeSavedItem = (id) => removeSaved(id);
     const clearAllItems = () => clearSaved();
-    const addRecommended = (property) => addSaved(property);
+const addRecommended = (property) => addSaved(property);
 
-    // العقارات بدون صور ما بتنعرض
-    const withImage = saved.filter(hasPropertyImage);
+    // العقارات المحفوظة: ما بنخفّي العقار بلا صورة لو كانت موجودة بالسيرفر/محلي
+    const withImage = saved;
     const filtered =
         activeFilter === "all" ? withImage : withImage.filter((p) => p.category === activeFilter);
     const visible = sort === "oldest" ? [...filtered].reverse() : filtered;

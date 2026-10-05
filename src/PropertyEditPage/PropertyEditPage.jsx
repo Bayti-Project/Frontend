@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   apiFetch,
@@ -7,7 +7,9 @@ import {
   PROPERTY_TYPE_OPTIONS,
   AREA_OPTIONS,
   GOVERNORATE_LABELS,
+  setPropertyInterestEnabled,
 } from "../services/api";
+import "../components/InterestCheckbox.css";
 import "./PropertyEditPage.css";
 
 /* ---------- خريطة الميزات: state key ← اسم الحقل بالـBackend ----------
@@ -153,6 +155,8 @@ export default function PropertyEditPage() {
     const [loading, setLoading] = useState(false);
     const [showSaved, setShowSaved] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [interestEnabled, setInterestEnabled] = useState(true);
+    const savedInterestRef = useRef(true);
 
     // 1) جلب البيانات الحالية للعقار من الـ Backend
     useEffect(() => {
@@ -176,6 +180,10 @@ export default function PropertyEditPage() {
                 setRegion(data.neighborhood || "");
                 setAreaSqm(data.area_sqm || "");
                 setDescription(data.description || "");
+
+                const interest = typeof data.interest_enabled === "boolean" ? data.interest_enabled : true;
+                setInterestEnabled(interest);
+                savedInterestRef.current = interest;
 
                 if (data.images && Array.isArray(data.images)) {
                     setPhotoPreviews(
@@ -305,6 +313,19 @@ export default function PropertyEditPage() {
                 const detail = errorData.detail || errorData.message || "فشل تحديث البيانات";
                 // لو الرد إنجليزي، نغلّفه بجملة عربية مفهومة
                 throw new Error(/^[\x20-\x7E]+$/.test(detail) ? `تعذّر الحفظ: ${detail}` : detail);
+            }
+
+            // PUT /api/properties/{id}/contact-settings/ — بعد نجاح تحديث بيانات العقار
+            if (interestEnabled !== savedInterestRef.current) {
+                const settingsRes = await setPropertyInterestEnabled(propertyId, interestEnabled);
+                if (!settingsRes.ok) {
+                    const settingsData = await settingsRes.json().catch(() => ({}));
+                    const serverMsg = typeof settingsData?.message === "string" ? settingsData.message : "";
+                    if (settingsRes.status === 403) throw new Error("هذا الإعداد متاح لمالك العقار فقط.");
+                    if (settingsRes.status === 404) throw new Error("تعذر حفظ إعداد الاهتمام: العقار غير موجود.");
+                    throw new Error(serverMsg || "تم حفظ البيانات، لكن تعذر تحديث إعداد طلبات الاهتمام.");
+                }
+                savedInterestRef.current = interestEnabled;
             }
 
             setShowSaved(true);
@@ -526,6 +547,27 @@ export default function PropertyEditPage() {
                                 <Checkbox label="خزان" checked={features.tank} onChange={() => toggleFeature("tank")} />
                                 <Checkbox label="بئر" checked={features.well} onChange={() => toggleFeature("well")} />
                             </div>
+                        </section>
+
+                        <section>
+                            <h2>إخفاء معلومات التواصل</h2>
+                            <label className={`interest-switch${interestEnabled ? " is-on" : ""}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={interestEnabled}
+                                    aria-label="إخفاء معلومات التواصل"
+                                    onChange={(e) => setInterestEnabled(e.target.checked)}
+                                />
+                                <span className="interest-switch-track" aria-hidden="true">
+                                    <span className="interest-switch-thumb" />
+                                </span>
+                                <span className="interest-switch-box">
+                                    <span className="interest-switch-title">أنا مهتم</span>
+                                    <span className="interest-switch-hint">
+                                        عند التفعيل تبقى معلومات تواصلك (رقم الجوال والواتس) مخفية عن المستأجر، ولا تظهر له إلا بعد موافقتك على طلب الاهتمام. عند الإلغاء تظهر أزرار الواتس والرسائل ورقمك للمستأجر مباشرة.
+                                    </span>
+                                </span>
+                            </label>
                         </section>
                     </form>
                 </div>

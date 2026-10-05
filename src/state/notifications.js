@@ -1,119 +1,236 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+    fetchNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+} from "../services/api.js";
 
-export const NOTIFICATIONS = [
-  {
-    id: 1,
-    status: "approved",
-    unread: false,
-    title: "تم الموافقة على طلبك",
-    description: "يمكنك الآن التواصل مع المالك ومناقشة تفاصيل العقار",
-    time: "منذ ساعة",
-    link: "/my-requests",
-  },
-  {
-    id: 2,
-    status: "rejected",
-    unread: false,
-    title: "تم رفض طلب الاهتمام",
-    description: "تم رفض طلب الاهتمام الخاص بك على عقار في حي النرجس",
-    time: "أمس",
-    link: "/my-requests",
-  },
-  {
-    id: 3,
-    status: "pending",
-    unread: false,
-    title: "طلب اهتمام جديد",
-    description: "أرسل مستأجر محتمل طلب اهتمام على وحدتك في الرمال",
-    time: "منذ 3 أيام",
-    link: "/home-owner",
-  },
-  {
-    id: 4,
-    status: "approved",
-    unread: false,
-    title: "تم الموافقة على طلب المعاينة",
-    description: "تم قبول طلبك لمعاينة شقة في النصر، تواصل مع المالك لتحديد الموعد",
-    time: "منذ 4 أيام",
-    link: "/my-requests",
-  },
-  {
-    id: 5,
-    status: "rejected",
-    unread: false,
-    title: "تم رفض طلب المعاينة",
-    description: "تم رفض طلب معاينة دوبلكس في الشيخ رضوان، العقار محجوز حالياً",
-    time: "منذ 5 أيام",
-    link: "/my-requests",
-  },
-  {
-    id: 6,
-    status: "pending",
-    unread: false,
-    title: "طلب اهتمام جديد على وحدتك",
-    description: "مستأجر مهتم ببيت في النصر وطلب معاينة خلال هذا الأسبوع",
-    time: "منذ أسبوع",
-    link: "/home-owner",
-  },
-];
+/* --------------------------------------------------------------------------
+    US-22 — إشعارات المستخدم
 
-const STORAGE_KEY = "bayti_read_notifications";
-const CHANGE_EVENT = "bayti:notifications-change";
+    كان الملف كله بيانات تجريبية + localStorage، والـAPI الحين موجود
+    (GET /api/notifications/ + PATCH read/ + PATCH read-all/)، فحوّلناه
+    لمصدر واحد للحقيقة: الـstore تحت بيستخدمه النافبار (عدّاد غير المقروء)
+    وصفحات الإشعارات كلها بنفس الوقت، وبنتشارك نفس الطلب بدل ما كل صفحة
+    تنادي الـendpoint لحالها.
+   -------------------------------------------------------------------------- */
 
-function readReadIds() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+const CACHE_TTL = 30_000;
+
+const listeners = new Set();
+let inflight = null;
+let fetchedAt = 0;
+
+const initialSnapshot = {
+    items: [],
+    /* idle: لسا ما طلبنا · loading: جاري · ready: عندنا بيانات
+       · error: فشل · unauthenticated: ما في session */
+    status: "idle",
+    error: "",
+    /* IDs عم نتعامل معها الآن (تعطيل زرار المقروء أثناء الحفظ) */
+    saving: [],
+};
+
+let snapshot = initialSnapshot;
+
+function emit(patch) {
+    snapshot = { ...snapshot, ...patch };
+    listeners.forEach((listener) => listener(snapshot));
 }
 
-function persistReadIds(ids) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-  } catch {
-    /* تجاهل تعذر الحفظ */
-  }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+function subscribe(listener) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
 }
 
-export function useReadNotifications() {
-  const [readIds, setReadIds] = useState(readReadIds);
+const hasToken = () => Boolean(localStorage.getItem("access_token"));
 
-  useEffect(() => {
-    const sync = () => setReadIds(readReadIds());
-    window.addEventListener(CHANGE_EVENT, sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener(CHANGE_EVENT, sync);
-      window.removeEventListener("storage", sync);
+/* أقل من TTL ما بنعيد الطلب — عشان التنقل بين الصفحات ما يولّد طلب كل مرة */
+function isFresh() {
+    return snapshot.status === "ready" && Date.now() - fetchedAt < CACHE_TTL;
+}
+
+export function ensureNotifications({ force = false } = {}) {
+    if (inflight) return inflight;
+    if (!force && isFresh()) return Promise.resolve(snapshot);
+
+    /* بدون توكن: الزائر بيطلع 401 — ما بنجيب شبكة بلا فايدة */
+    if (!hasToken()) {
+        fetchedAt = 0;
+        emit({ items: [], status: "unauthenticated", error: "" });
+        return Promise.resolve(snapshot);
+    }
+
+    emit({ status: snapshot.items.length ? snapshot.status : "loading" });
+
+    inflight = fetchNotifications()
+        .then((result) => {
+            fetchedAt = Date.now();
+            if (result.state === "ready") {
+                emit({ items: result.items, status: "ready", error: "" });
+            } else if (result.state === "unauthenticated") {
+                fetchedAt = 0;
+                emit({ items: [], status: "unauthenticated", error: result.message });
+            } else {
+                emit({ items: [], status: "error", error: result.message });
+            }
+            return snapshot;
+        })
+        .catch(() => {
+            emit({ items: [], status: "error", error: "تعذر تحميل الإشعارات، حاول مرة أخرى." });
+            return snapshot;
+        })
+        .finally(() => {
+            inflight = null;
+        });
+
+    return inflight;
+}
+
+/* نسيّر التحديث مباشرة (optimistic) عشان الواجهة ما تنتظر الشبكة،
+   وبنرجّع الحالة لو الـPATCH فشل */
+function applyLocally(ids) {
+    const keys = new Set(ids.map(String));
+    emit({
+        items: snapshot.items.map((item) =>
+            keys.has(String(item.id)) && !item.read ? { ...item, read: true } : item
+        ),
+        saving: [...snapshot.saving, ...ids],
+    });
+}
+
+function revertLocally(ids) {
+    const keys = new Set(ids.map(String));
+    emit({
+        items: snapshot.items.map((item) =>
+            keys.has(String(item.id)) ? { ...item, read: false } : item
+        ),
+        saving: snapshot.saving.filter((id) => !keys.has(String(id))),
+        error: "تعذر تحديث حالة الإشعار، حاول مرة أخرى.",
+    });
+}
+
+function endSaving(ids) {
+    const keys = new Set(ids.map(String));
+    emit({ saving: snapshot.saving.filter((id) => !keys.has(String(id))) });
+}
+
+export async function readNotification(id) {
+    if (snapshot.items.some((item) => String(item.id) === String(id) && item.read)) return;
+
+    applyLocally([id]);
+    try {
+        const res = await markNotificationRead(id);
+        if (res && res.status === 401) {
+            emit({
+                items: [],
+                status: "unauthenticated",
+                error: "انتهت الجلسة، يرجى تسجيل الدخول من جديد.",
+            });
+            return;
+        }
+        if (res && !res.ok && res.status !== 404) revertLocally([id]);
+        else endSaving([id]);
+    } catch {
+        revertLocally([id]);
+    }
+}
+
+export async function readAllNotifications() {
+    if (!snapshot.items.some((item) => !item.read)) return;
+
+    const unreadIds = snapshot.items.filter((item) => !item.read).map((item) => item.id);
+    applyLocally(unreadIds);
+    try {
+        const res = await markAllNotificationsRead();
+        if (res && res.status === 401) {
+            emit({
+                items: [],
+                status: "unauthenticated",
+                error: "انتهت الجلسة، يرجى تسجيل الدخول من جديد.",
+            });
+            return;
+        }
+        if (res && !res.ok) revertLocally(unreadIds);
+        else endSaving(unreadIds);
+    } catch {
+        revertLocally(unreadIds);
+    }
+}
+
+/* logout / تبديل مستخدم: بنمسح الكاش حتى ما تظهر إشعارات مستخدم سابق */
+export function resetNotifications() {
+    fetchedAt = 0;
+    inflight = null;
+    snapshot = initialSnapshot;
+    listeners.forEach((listener) => listener(snapshot));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  التوقيت بالعربي                                                           */
+/* -------------------------------------------------------------------------- */
+const dateFormatter = new Intl.DateTimeFormat("ar-EG-u-nu-latn", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+});
+
+function plural(count, singular, dual, pluralForm) {
+    if (count === 1) return singular;
+    if (count === 2) return dual;
+    return `${count} ${pluralForm}`;
+}
+
+export function formatNotificationTime(createdAt) {
+    if (!createdAt) return "";
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return String(createdAt);
+
+    const minutes = Math.floor((Date.now() - date.getTime()) / 60_000);
+    if (minutes < 1) return "الآن";
+    if (minutes < 60) return `منذ ${plural(minutes, "دقيقة", "دقيقتين", "دقائق")}`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `منذ ${plural(hours, "ساعة", "ساعتين", "ساعات")}`;
+
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "أمس";
+    if (days < 7) return `منذ ${plural(days, "يوم", "يومين", "أيام")}`;
+
+    return dateFormatter.format(date);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Hooks                                                                     */
+/* -------------------------------------------------------------------------- */
+export function useNotifications() {
+    const [state, setState] = useState(snapshot);
+
+    useEffect(() => {
+        const unsubscribe = subscribe(setState);
+        /* بنزامن مع آخر snapshot بعد الاشتراك: ممكن تحديث يوصل بين أول
+           render والاشتراك (خصوصة لو النافبار بدأ الطلب قبل هالصفحة) */
+        setState(snapshot);
+        ensureNotifications();
+        return unsubscribe;
+    }, []);
+
+    const refresh = useCallback(() => ensureNotifications({ force: true }), []);
+
+    return {
+        items: state.items,
+        status: state.status,
+        error: state.error,
+        saving: state.saving,
+        isLoading: state.status === "loading" || (state.status === "idle" && hasToken()),
+        isUnauthorized: state.status === "unauthenticated",
+        refresh,
+        markRead: readNotification,
+        markAllRead: readAllNotifications,
     };
-  }, []);
-
-  function markRead(id) {
-    setReadIds((prev) => {
-      if (prev.includes(id)) return prev;
-      const next = [...prev, id];
-      persistReadIds(next);
-      return next;
-    });
-  }
-
-  function markAllRead() {
-    setReadIds((prev) => {
-      const allIds = NOTIFICATIONS.map((n) => n.id);
-      if (allIds.every((id) => prev.includes(id))) return prev;
-      const next = [...new Set([...prev, ...allIds])];
-      persistReadIds(next);
-      return next;
-    });
-  }
-
-  return { readIds, markRead, markAllRead };
 }
 
 export function useUnreadNotificationsCount() {
-  const { readIds } = useReadNotifications();
-  return NOTIFICATIONS.filter((n) => n.unread && !readIds.includes(n.id)).length;
+    const { items } = useNotifications();
+    return items.filter((item) => !item.read).length;
 }

@@ -23,10 +23,13 @@ function mapRecentProperty(item) {
 }
 
 function mapRecentRequest(item) {
+    /* US-19 بيرجّع IDs بس (tenant/property) — names/titles اختيارية */
+    const tenantId = item?.tenant && typeof item.tenant !== 'object' ? item.tenant : null;
+    const propertyId = item?.property && typeof item.property !== 'object' ? item.property : null;
     return {
         id: item?.id,
-        name: item?.tenant_name || item?.tenant_full_name || 'مستأجر',
-        property: item?.property_title || '',
+        name: item?.tenant_name || item?.tenant_full_name || (tenantId != null ? `مستأجر #${tenantId}` : 'مستأجر'),
+        property: item?.property_title || (propertyId != null ? `عقار #${propertyId}` : ''),
         date: item?.created_at ? new Date(item.created_at).toLocaleDateString('ar-EG') : '',
         status: item?.status || 'pending',
         avatar: resolveMediaUrl(item?.tenant_image || item?.tenant_avatar || '') || defaultAvatar,

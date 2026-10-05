@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import LandingFooter from "./components/LandingFooter";
 import AuthPromptModal from "./components/AuthPromptModal";
 import { resolveMediaUrl, clearCredentials, isOwnerRole, isTenantRole, resolveRole, fetchCurrentRole } from "./services/api.js";
+import { resetNotifications } from "./state/notifications.js";
 import defaultAvatar from "./components/default-avatar.svg";
 import "./styles/style.css";
 
@@ -29,6 +30,8 @@ import SearchPage from "./Search/search";
 import PropertySearchPage from "./PropertySearch/PropertySearch";
 import MyRequests from "./myRequests/my requests.jsx";
 import Notifications from "./notifications/Notifications.jsx";
+import OwnerNotification from "./OwnerNotification/OwnerNotification";
+import TenantNotification from "./TenantNotification/TenantNotification";
 import OwnerRequests from "./ownerRequests/OwnerRequests.jsx";
 
 
@@ -164,17 +167,19 @@ export default function App() {
     onSearchClick: () => navigate("/search"),
     /* صفحة الطلبات بتختلف حسب دور المستخدم: للمالك "طلبات الاهتمام"، وللمستأجر "طلباتي" */
     onRequestsClick: async () => {
-      /* إذا الدور لسا ما اتحدد بنسأل الـAPI — عشان ضغطة "طلباتي"
-         ما تفتحش صفحة المستأجر لمالك */
-      const resolved = role ? role : await fetchCurrentRole();
+      /* نفس ترتيب onHomeClick: state ثم المحفوظ ثم الـAPI — حتى ما تفتحش
+         صفحة المستأجر لمالك دوره لسا ما اتحدد */
+      let resolved = homePathFor(role) ? role : resolveRole(user.role);
+      if (!resolved) resolved = await fetchCurrentRole();
       navigate(isOwnerRole(resolved) ? "/owner-requests" : "/my-requests");
     },
     onSavedClick: () => navigate("/saved"),
     onHomeClick: async () => {
-      /* إذا الدور لسا ما اتحدد بنسأل الـAPI قبل التوجيه — عشان المالك
-         ما يوصل لصفحة المستأجر لو الدور ضل مجهول */
-      const resolved = homePathFor(role) ? role : await fetchCurrentRole();
-      navigate(homePathFor(resolved) || "/");
+      /* ترتيب المصادر: الدور بالـstate، ثم المحفوظ، ثم الـAPI.
+         ولو كلهم ما نفعوا ما بنسيب المستخدم صفحة الزائر */
+      let resolved = homePathFor(role) ? role : resolveRole(user.role);
+      if (!resolved) resolved = await fetchCurrentRole();
+      navigate(homePathFor(resolved) || (isLoggedIn() ? "/home-tenant" : "/"));
     },
     onProfileClick: () => {
       try {
@@ -194,6 +199,9 @@ export default function App() {
       localStorage.removeItem("bayti_user");
       // مهم: بدون مسح بيانات الاعتماد يبقى refreshTokens يعيد تسجيل الدخول تلقائياً
       clearCredentials();
+      /* كاش الإشعارات في الذاكرة: بدون مسحه ممكن يظهر عدّاد إشعارات
+         المستخدم السابق لو تغيّر المستخدم بدون إعادة تحميل للصفحة */
+      resetNotifications();
       setUser({
         name: "",
         email: "",
@@ -312,6 +320,30 @@ export default function App() {
             <div className="page" dir="rtl">
               <Navbar {...navProps} />
               {requestsElement}
+              <LandingFooter />
+            </div>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/owner-notifications"
+        element={
+          <RequireAuth>
+            <div className="page" dir="rtl">
+              <Navbar {...navProps} />
+              <OwnerNotification onBrowse={() => navigate("/search")} />
+              <LandingFooter />
+            </div>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/tenant-notifications"
+        element={
+          <RequireAuth>
+            <div className="page" dir="rtl">
+              <Navbar {...navProps} />
+              <TenantNotification onBrowse={() => navigate("/search")} />
               <LandingFooter />
             </div>
           </RequireAuth>

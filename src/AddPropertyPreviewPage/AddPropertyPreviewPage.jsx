@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiInfo, FiImage, FiRefreshCw, FiAlertCircle } from "react-icons/fi";
 import { getDraft, saveDraft, persistDraft, clearPersistedDraft } from "../state/addPropertyDraft";
-import { apiFetch, mapApiError } from "../services/api";
+import { apiFetch, mapApiError, setPropertyInterestEnabled } from "../services/api";
 import "../PropertyEditPage/PropertyEditPage.css";
 import "../AddPropertyPage/AddPropertyPage.css";
 import "./AddPropertyPreviewPage.css";
@@ -160,6 +160,16 @@ export default function AddPropertyPreviewPage() {
                 setPhase("idle");
                 return;
             }
+
+            // PUT /api/properties/{id}/contact-settings/ — يُستدعى فقط عند الإلغاء لأن الافتراضي في الباك إند مفعّل
+            if (features.Interested === false) {
+                const created = await res.json().catch(() => null);
+                const newId = created?.property?.id ?? created?.id;
+                if (newId) {
+                    await setPropertyInterestEnabled(newId, false).catch(() => null);
+                }
+            }
+
             setPhase("success");
         } catch (err) {
             setPublishError(err?.message || "تعذر الاتصال بالخادم");

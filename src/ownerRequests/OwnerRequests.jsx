@@ -1,6 +1,87 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiFetch, fetchOwnerInterestRequests, normalizeInterestRequest, resolveMediaUrl, setInterestRequestStatus } from '../services/api';
+import { formatNotificationTime } from '../state/notifications';
+import defaultAvatar from '../components/default-avatar.svg';
 import './OwnerRequests.css';
 
+/* statuses بالـapi (US-18/19): pending | approved | rejected */
+const STATUS_LABEL = {
+    pending: 'قيد المراجعة',
+    approved: 'مقبولة',
+    rejected: 'مرفوضة',
+};
+
+/* رسائل الـapi بالإنجليزي → عربي، للعرض في الواجهة */
+const REQUEST_ERROR_AR = {
+    'Authentication credentials were not provided.': 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.',
+    'You do not have permission to perform this action.': 'ما إلك صلاحية على هذا الطلب — الإجراء متاح لصاحب العقار فقط.',
+    'Status must be approved or rejected.': 'حالة الطلب غير صالحة.',
+    'This field is required.': 'حالة الطلب مطلوبة.',
+};
+
+function describeRequestError(status, data, { forList = false } = {}) {
+    const detail = typeof data?.detail === 'string' ? data.detail : '';
+    const fieldMsg = Array.isArray(data?.status) ? data.status[0] : '';
+    const raw = fieldMsg || detail;
+    if (REQUEST_ERROR_AR[raw]) return REQUEST_ERROR_AR[raw];
+    if (status === 401) return 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.';
+    if (status === 403) {
+        return forList ? 'ما إلك صلاحية — طلبات الاهتمام متاحة للمالك فقط.' : REQUEST_ERROR_AR['You do not have permission to perform this action.'];
+    }
+    if (status === 400) return raw || 'تعذّر تنفيذ الإجراء، حاول مرة أخرى.';
+    if (status === 404) return 'العنصر غير موجود — ربما حُذف من الخادم.';
+    return 'خطأ في الخادم، حاول مرة أخرى بعد قليل.';
+}
+
+const dateTimeFormatter = new Intl.DateTimeFormat('ar-EG-u-nu-latn', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+});
+
+function formatFullDate(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? String(value) : dateTimeFormatter.format(date);
+}
+
+/* الـapi بيرجّع { id, tenant, property, owner, status, created_at, updated_at }
+   الأسماء/العقار مو مضمّنين — بنجيب عناوين العقارات من /api/properties/mine/ وبنحل
+   الـtenant نعرضه كـ"مستأجر #<id>" لأن ما في endpoint عام لمستخدم آخر */
+function mapRequest(request, propertyMap) {
+    const property = propertyMap[String(request.propertyId)] || {};
+    const tenant = request.raw?.tenant;
+    const tenantObject = tenant && typeof tenant === 'object' ? tenant : null;
+    const tenantName = tenantObject
+        ? tenantObject.full_name || tenantObject.name || `مستأجر #${request.tenantId}`
+        : request.tenantId
+            ? `مستأجر #${request.tenantId}`
+            : 'مستأجر';
+    const region = property.location
+        || property.address
+        || [property.neighborhood, property.area, property.governorate].filter(Boolean).join('، ');
+
+    return {
+        id: request.id,
+        orderNum: `#${String(request.id ?? 0).padStart(4, '0')}`,
+        reqCode: `REQ-${request.id}`,
+        submittedAt: formatFullDate(request.createdAt),
+        requestTime: formatNotificationTime(request.createdAt) || '—',
+        status: request.status,
+        statusLabel: STATUS_LABEL[request.status] || STATUS_LABEL.pending,
+        tenantName,
+        tenantAvatar: resolveMediaUrl(tenantObject?.profile_image || tenantObject?.image || '') || defaultAvatar,
+        propertyId: request.propertyId,
+        propertyTitle: property.title || (request.propertyId ? `عقار #${request.propertyId}` : 'عقار'),
+        region: region || '—',
+        message: request.raw?.message || 'تم إرسال طلب اهتمام على هذا العقار بدون رسالة مرفقة.',
+    };
+}
+
+/* أسباب الرفض — بتترسل مع الطلب مثل ما كانت قبل، والـbackend بيقراها
+   لما يضيف الحقول (حالياً بيقبل status لحاله وبيتجاهل الباقي) */
 const REASON_OPTIONS = [
     'العقار لم يعد متاحاً',
     'الدفوعات غير متوافقة',
@@ -18,65 +99,6 @@ const QUICK_REASONS = [
 
 const MESSAGE_MAX = 200;
 
-const REQUESTS = [
-    {
-        id: 1,
-        orderNum: '#0001',
-        reqCode: 'REQ-88219',
-        submittedAt: '15 أكتوبر 2025 • 09:12 مساءً',
-        tenantName: 'أحمد محمد',
-        tenantAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-        propertyTitle: 'شقة في الشمس وإطلالة مفتوحة',
-        region: 'الرمال، غزة',
-        requestTime: 'منذ ساعتين',
-        status: 'pending',
-        statusLabel: 'قيد المراجعة',
-        message: 'مرحباً، أنا مهتم بهذا العقار وأرغب في معرفة المزيد من التفاصيل وموعد مناسب للمعاينة.',
-    },
-    {
-        id: 2,
-        orderNum: '#0002',
-        reqCode: 'REQ-88204',
-        submittedAt: '14 أكتوبر 2025 • 06:42 مساءً',
-        tenantName: 'سارة خالد',
-        tenantAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-        propertyTitle: 'بيت عائلي هادئ قرب البحر',
-        region: 'النصر، غزة',
-        requestTime: 'أمس، 06:42 م',
-        status: 'approved',
-        statusLabel: 'مقبول',
-        message: 'مرحباً، أود معرفة التفاصيل المتاحة لشروط العقد والتأمين، وهل السعر قابل للتفاوض؟',
-    },
-    {
-        id: 3,
-        orderNum: '#0003',
-        reqCode: 'REQ-88176',
-        submittedAt: '12 سبتمبر 2025 • 11:20 صباحاً',
-        tenantName: 'خالد منصور',
-        tenantAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
-        propertyTitle: 'دوبلكس مفروش',
-        region: 'الرمال، غزة',
-        requestTime: '12 سبتمبر 2024',
-        status: 'rejected',
-        statusLabel: 'مرفوض',
-        message: 'السلام عليكم، هل الشقة مفروشة بالكامل؟ وهل السعر يشمل عداد الكهرباء؟',
-    },
-    {
-        id: 4,
-        orderNum: '#0004',
-        reqCode: 'REQ-88155',
-        submittedAt: '10 سبتمبر 2025 • 04:05 مساءً',
-        tenantName: 'ليلى خليل',
-        tenantAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
-        propertyTitle: 'دوبلكس مشمس للعائلات الصغيرة',
-        region: 'الشيخ رضوان، غزة',
-        requestTime: '10 سبتمبر 2024',
-        status: 'pending',
-        statusLabel: 'قيد المراجعة',
-        message: 'أهلاً، أنا مستأجر جاد وأبحث عن سكن قريب من المدرسة، ممكن معاينة نهاية الأسبوع؟',
-    },
-];
-
 const TABS = [
     { id: 'all', label: 'كل الطلبات' },
     { id: 'rejected', label: 'مرفوضة' },
@@ -86,13 +108,68 @@ const TABS = [
 
 const OwnerRequests = () => {
     const [activeTab, setActiveTab] = useState('all');
-    const [requests, setRequests] = useState(REQUESTS);
-    const [selectedId, setSelectedId] = useState(REQUESTS[0].id);
-    const [rejectTarget, setRejectTarget] = useState(null);
-    const [rejectReason, setRejectReason] = useState('');
-    const [rejectQuick, setRejectQuick] = useState('');
-    const [rejectMessage, setRejectMessage] = useState('');
-    const [acceptTarget, setAcceptTarget] = useState(null);
+    /* US-19 — طلبات عقارات المستخدم الحالي من /api/owner/interest-requests */
+    const [requests, setRequests] = useState([]);
+    const [selectedId, setSelectedId] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
+    const [propertyMap, setPropertyMap] = useState({});
+    const [savingId, setSavingId] = useState(null);
+    const [actionError, setActionError] = useState('');
+const [rejectTarget, setRejectTarget] = useState(null);
+const [rejectReason, setRejectReason] = useState('');
+const [rejectQuick, setRejectQuick] = useState('');
+const [rejectMessage, setRejectMessage] = useState('');
+const [acceptTarget, setAcceptTarget] = useState(null);
+
+    const loadRequests = useCallback(async ({ silent = false } = {}) => {
+        if (!silent) setLoading(true);
+        setLoadError('');
+        try {
+            const res = await fetchOwnerInterestRequests();
+            if (!res.ok) {
+                const data = await res.json().catch(() => null);
+                setRequests([]);
+                setLoadError(describeRequestError(res.status, data, { forList: true }));
+                return;
+            }
+            const data = await res.json().catch(() => null);
+            const list = (Array.isArray(data) ? data : data?.results) || [];
+            setRequests(list.map(normalizeInterestRequest).filter(Boolean));
+
+            /* عناوين العقارات من /api/properties/mine/ — استدعاء واحد ونربطه محلياً */
+            try {
+                const propRes = await apiFetch('/api/properties/mine/');
+                if (propRes.ok) {
+                    const propData = await propRes.json().catch(() => null);
+                    const properties = (Array.isArray(propData) ? propData : propData?.results) || [];
+                    setPropertyMap(
+                        properties.reduce((acc, property) => {
+                            if (property?.id != null) acc[String(property.id)] = property;
+                            return acc;
+                        }, {})
+                    );
+                }
+            } catch {
+                /* ما في مشكلة — بنعرض رقم العقار بدل العنوان */
+            }
+        } catch (err) {
+            setRequests([]);
+            setLoadError(err?.message || 'تعذّر تحميل الطلبات، تحقّق من الاتصال وحاول مجدداً.');
+        } finally {
+            if (!silent) setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadRequests();
+    }, [loadRequests]);
+
+    useEffect(() => {
+        if (rejectTarget && !requests.some((r) => r.id === rejectTarget.id)) setRejectTarget(null);
+        if (acceptTarget && !requests.some((r) => r.id === acceptTarget.id)) setAcceptTarget(null);
+        if (selectedId == null && requests.length > 0) setSelectedId(requests[0].id);
+    }, [requests, selectedId, rejectTarget, acceptTarget]);
 
     useEffect(() => {
         if (!rejectTarget && !acceptTarget) return undefined;
@@ -108,41 +185,61 @@ const OwnerRequests = () => {
 
     function openReject(request) {
         setRejectTarget(request);
+        setActionError('');
         setRejectReason('');
         setRejectQuick('');
         setRejectMessage('');
     }
 
     function closeReject() {
+        if (savingId != null) return;
         setRejectTarget(null);
+        setActionError('');
     }
 
     function openAccept(request) {
         setAcceptTarget(request);
+        setActionError('');
     }
 
     function closeAccept() {
+        if (savingId != null) return;
         setAcceptTarget(null);
+        setActionError('');
     }
 
-    function confirmAccept() {
-        if (!acceptTarget) return;
-        setRequests((prev) =>
-            prev.map((r) =>
-                r.id === acceptTarget.id ? { ...r, status: 'approved', statusLabel: 'مقبول' } : r
-            )
-        );
-        closeAccept();
-    }
-
-    function confirmReject() {
-        if (!rejectTarget) return;
-        setRequests((prev) =>
-            prev.map((r) =>
-                r.id === rejectTarget.id ? { ...r, status: 'rejected', statusLabel: 'مرفوض' } : r
-            )
-        );
-        closeReject();
+    /* US-18 — PUT /api/interest-request/{id}/status { status: "approved" | "rejected" }
+       200 → الطلب اتحدث + إشعار فوري للمستأجر. بنحدّث الصف من رد الـapi، وبعدها
+       refetch صامت عشان نضمن مطابقة الخادم.
+       السبب والرسالة بنترسلهم مع الرفض (reason + message) — حالياً الـbackend
+       بيقبل status لحاله وبيتجاهلهم، ولما يضيف الحقول بيصيروا محفوظين. */
+    async function updateStatus(target, status) {
+        if (!target || savingId != null) return;
+        setSavingId(target.id);
+        setActionError('');
+        try {
+            const extra =
+                status === 'rejected'
+                    ? { reason: rejectReason || undefined, message: rejectMessage || undefined }
+                    : {};
+            const res = await setInterestRequestStatus(target.id, status, extra);
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                setActionError(describeRequestError(res.status, data));
+                return;
+            }
+            const updated = normalizeInterestRequest(data) || { ...target, status };
+            setRequests((prev) =>
+                prev.map((r) => (r.id === target.id ? { ...r, status: updated.status, updatedAt: updated.updatedAt || r.updatedAt } : r))
+            );
+            setRejectTarget(null);
+            setAcceptTarget(null);
+            loadRequests({ silent: true });
+        } catch (err) {
+            setActionError(err?.message || 'تعذّر تنفيذ الإجراء، حاول مرة أخرى.');
+        } finally {
+            setSavingId(null);
+        }
     }
 
     function pickQuickReason(reason) {
@@ -160,12 +257,14 @@ const OwnerRequests = () => {
         [requests]
     );
 
-    const filtered = useMemo(() => {
-        if (activeTab === 'all') return requests;
-        return requests.filter((r) => r.status === activeTab);
-    }, [activeTab, requests]);
+    const items = useMemo(() => requests.map((r) => mapRequest(r, propertyMap)), [requests, propertyMap]);
 
-    const selected = requests.find((r) => r.id === selectedId) || requests[0];
+    const filtered = useMemo(() => {
+        if (activeTab === 'all') return items;
+        return items.filter((r) => r.status === activeTab);
+    }, [activeTab, items]);
+
+    const selected = items.find((r) => r.id === selectedId) || filtered[0] || items[0];
 
     function exportCsv() {
         const header = ['رقم الطلب', 'اسم المستأجر', 'العقار', 'المنطقة', 'تاريخ الطلب', 'الحالة', 'الرسالة'];
@@ -203,14 +302,26 @@ const OwnerRequests = () => {
                         <p className="oreq-subtitle">راجع طلبات المستأجرين واتخذ القرار المناسب</p>
                     </div>
 
-                    <button className="oreq-export-btn" onClick={exportCsv}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        تصدير القائمة
-                    </button>
+                    <div className="oreq-header-actions">
+                        <button className="oreq-export-btn" onClick={() => loadRequests()} disabled={loading} aria-label="تحديث الطلبات">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="23 4 23 10 17 10" />
+                                <polyline points="1 20 1 14 7 14" />
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+                                <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                            </svg>
+                            تحديث
+                        </button>
+
+                        <button className="oreq-export-btn" onClick={exportCsv} disabled={filtered.length === 0}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            تصدير القائمة
+                        </button>
+                    </div>
                 </header>
 
                 <div className="oreq-tabs">
@@ -231,9 +342,20 @@ const OwnerRequests = () => {
                 <div className="oreq-grid">
 
                     <div className="oreq-list">
-                        {filtered.length === 0 ? (
+                        {loadError ? (
                             <div className="oreq-empty">
-                                <p>لا توجد طلبات ضمن هذا التصنيف</p>
+                                <p>{loadError}</p>
+                                <button className="oreq-export-btn" onClick={() => loadRequests()} style={{ marginTop: 16 }}>
+                                    إعادة المحاولة
+                                </button>
+                            </div>
+                        ) : loading ? (
+                            <div className="oreq-empty">
+                                <p>جارٍ تحميل الطلبات...</p>
+                            </div>
+                        ) : filtered.length === 0 ? (
+                            <div className="oreq-empty">
+                                <p>{activeTab === 'all' ? 'ما في طلبات اهتمام على عقاراتك حالياً' : 'لا توجد طلبات ضمن هذا التصنيف'}</p>
                             </div>
                         ) : (
                             filtered.map((item) => (
@@ -247,6 +369,7 @@ const OwnerRequests = () => {
                                             className="oreq-item-avatar"
                                             src={item.tenantAvatar}
                                             alt={item.tenantName}
+                                            onError={(e) => { e.currentTarget.src = defaultAvatar; }}
                                         />
                                         <span className="oreq-item-text">
                                             <span className="oreq-item-name">{item.tenantName}</span>
@@ -284,6 +407,7 @@ const OwnerRequests = () => {
                                     className="oreq-tenant-avatar"
                                     src={selected.tenantAvatar}
                                     alt={selected.tenantName}
+                                    onError={(e) => { e.currentTarget.src = defaultAvatar; }}
                                 />
                                 <div className="oreq-tenant-text">
                                     <span className="oreq-tenant-label">مستأجر مهتم</span>
@@ -324,7 +448,7 @@ const OwnerRequests = () => {
                                 <button
                                     className="oreq-btn oreq-btn--reject"
                                     onClick={() => openReject(selected)}
-                                    disabled={selected.status === 'rejected'}
+                                    disabled={selected.status === 'rejected' || savingId != null}
                                 >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                                         <line x1="18" y1="6" x2="6" y2="18" />
@@ -336,7 +460,7 @@ const OwnerRequests = () => {
                                 <button
                                     className="oreq-btn oreq-btn--accept"
                                     onClick={() => openAccept(selected)}
-                                    disabled={selected.status === 'approved'}
+                                    disabled={selected.status === 'approved' || savingId != null}
                                 >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="20 6 9 17 4 12" />
@@ -388,6 +512,12 @@ const OwnerRequests = () => {
                             <strong>{rejectTarget.propertyTitle}</strong>)؟ سيتم إشعار المستأجر فوراً
                             بالاعتذار وإتاحة فرصة التقديم له على عقارات أخرى.
                         </p>
+
+                        {actionError && (
+                            <p className="oreq-alert" role="alert">
+                                {actionError}
+                            </p>
+                        )}
 
                         <div className="oreq-field">
                             <label className="oreq-label" htmlFor="oreq-reason">
@@ -464,18 +594,19 @@ const OwnerRequests = () => {
                         </div>
 
                         <div className="oreq-modal__actions">
-                            <button className="oreq-modal__btn oreq-modal__btn--cancel" onClick={closeReject}>
+                            <button className="oreq-modal__btn oreq-modal__btn--cancel" onClick={closeReject} disabled={savingId != null}>
                                 تراجع
                             </button>
                             <button
                                 className="oreq-modal__btn oreq-modal__btn--confirm"
-                                onClick={confirmReject}
+                                onClick={() => updateStatus(rejectTarget, 'rejected')}
+                                disabled={savingId != null}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                                     <line x1="18" y1="6" x2="6" y2="18" />
                                     <line x1="6" y1="6" x2="18" y2="18" />
                                 </svg>
-                                تاكيد الرفض
+                                {savingId != null ? 'جارٍ الرفض...' : 'تاكيد الرفض'}
                             </button>
                         </div>
                     </div>
@@ -537,7 +668,6 @@ const OwnerRequests = () => {
                                     <circle cx="12" cy="7" r="4" />
                                 </svg>
                                 <span className="oac-name">{acceptTarget.tenantName}</span>
-                                <span className="oac-dot" title="متصل الآن" />
                             </span>
 
                             <span className="oac-row__label">تاريخ ووقت التقديم:</span>
@@ -552,19 +682,27 @@ const OwnerRequests = () => {
                             </span>
                         </div>
 
+                        {actionError && (
+                            <p className="oreq-alert" role="alert">
+                                {actionError}
+                            </p>
+                        )}
+
                         <div className="oreq-modal__actions">
                             <button
                                 className="oreq-modal__btn oac-btn--confirm"
-                                onClick={confirmAccept}
+                                onClick={() => updateStatus(acceptTarget, 'approved')}
+                                disabled={savingId != null}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                تاكيد القبول ومشاركة التواصل
+                                {savingId != null ? 'جارٍ القبول...' : 'تاكيد القبول ومشاركة التواصل'}
                             </button>
                             <button
                                 className="oreq-modal__btn oreq-modal__btn--cancel"
                                 onClick={closeAccept}
+                                disabled={savingId != null}
                             >
                                 تراجع
                             </button>

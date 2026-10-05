@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { FaApple, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
 import heroImg from './hero.jpg';
-import { API_HOST, mapApiError, normalizeUser, storeCredentials, resolveRole, apiFetch } from '../services/api.js';
+import { API_HOST, mapApiError, normalizeUser, storeCredentials, clearCredentials, resolveRole, apiFetch, googleLogin } from '../services/api.js';
+import {
+    requestGoogleIdToken,
+    clearGoogleButton,
+    isGoogleLoginConfigured,
+} from '../services/googleAuth.js';
 
 function extractErrorMessage(data) {
     return mapApiError(data);
@@ -22,26 +27,31 @@ async function fetchProfile() {
     }
 }
 
-/* الملف الشخصي أحياناً ما بيرجّع role — وقتها نستنتج الدور من endpoint
-   عقارات المالك: لو ردّ 200 يعني الحساب مالك (حتى لو ما عنده عقارات).
-   403/404 يعني مستأجر. أما 401 فجلسة غير صالحة — مو مستأجر، وبيترك
-   الدور فارغ بد ما نلف المالك على صفحة المستأجر */
+/* الملف الشخصي أحياناً ما بيرجّع role — وقتها بنأكد الدور بأصوات واضحة:
+   إن الحساب مالك: أي endpoint مالك بيرجّع 200 = مالك مؤكد.
+   ما بنرجّع 'tenant' من 403/404 أبداً — التخمين كان بيحوّل المالك
+   لصفحة المستأجر وبيكتب 'مستأجر' في localStorage */
 async function probeOwnerRole() {
-    try {
-        const res = await apiFetch('/api/properties/mine/');
-        if (res.ok) return 'owner';
-        if (res.status === 403 || res.status === 404) return 'tenant';
-        return '';
-    } catch {
-        return '';
+    for (const path of ['/api/owner/interest-requests', '/api/properties/mine/']) {
+        try {
+            const res = await apiFetch(path);
+            console.info(`[role] ${path} ->`, res.status);
+            if (res.ok) return 'owner';
+        } catch {
+            /* تجاهل — بنجرب الـendpoint اللي بعده */
+        }
     }
+    return '';
 }
 
 /* لازم الدور ينحدد بشكل مؤكد — وإلا "bayti_user" ما بينكتب
    والمستخدم بيطلع لصفحة الزائر بدل صفحته */
 async function resolveLoggedInUser(email) {
     const profile = await fetchProfile();
-    const role = resolveRole(profile?.role);
+    const role =
+        resolveRole(profile?.role) ||
+        resolveRole(profile?.account_type) ||
+        resolveRole(profile?.user_type);
 
     if (role) return { ...profile, role };
 
@@ -56,6 +66,14 @@ function homePathFor(role) {
     return '/';
 }
 
+const GOOGLE_ERROR_AR = {
+    'missing-client-id': 'تسجيل الدخول عبر Google غير مُفعّل حالياً.',
+    'gsi-load-failed': 'تعذر تحميل خدمة Google، تأكد من الاتصال بالإنترنت وحاول مرة أخرى.',
+    'gsi-unavailable': 'خدمة Google لم ترد، حاول مرة أخرى.',
+    'gsi-timeout': 'انتهت المهلة — غالباً سكرت نافذة Google بدون ما تختار حساب. جرّب مرة ثانية.',
+    'gsi-no-credential': 'ما وصلنا حساب Google. حاول مرة أخرى.',
+};
+
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -63,6 +81,9 @@ function Login() {
     const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const googleSlotRef = useRef(null);
+    const [googleConfigured] = useState(isGoogleLoginConfigured);
 
     const navigate = useNavigate();
 
@@ -120,6 +141,83 @@ function Login() {
             setLoading(false);
         }
     };
+
+    /* Google: نحوّل الـid_token لـJWT ونسجّل الدخول بنفس منطق تسجيل الدخول بالبريد */
+    const handleGoogleIdToken = async (idToken) => {
+        setError('');
+        setLoading(true);
+        try {
+            const result = await googleLogin(idToken);
+            /* الأهم للتشخيص: result.status + result.data (بتنطبع بالكونسول من api.js) */
+            console.log('[google] نتيجة الدخول:', result.status, result.data, result.message);
+            /* 400 / 401 / 403 — ما في login، بس رسالة واضحة للمستخدم */
+            if (result.state !== 'success') {
+                setError(result.message);
+                return;
+            }
+
+            const data = result.data;
+            localStorage.setItem('access_token', data.access);
+            if (data.refresh) localStorage.setItem('refresh_token', data.refresh);
+
+            /* دخول بدون كلمة مرور: بنمسح أي بيانات اعتماد محفوظة من جلسة سابقة،
+               وإلا تجديد التوكن التلقائي بيرجّعنا لنفس المستخدم */
+            clearCredentials();
+
+            /* لو الـbackend ما رجّع role، بنستنتجه من profile/عقارات المالك */
+            const roleFromResponse = resolveRole(data.user?.role);
+            const source = roleFromResponse
+                ? data.user
+                : await resolveLoggedInUser(data.user?.email || '');
+
+            const loggedUser = normalizeUser(source);
+            localStorage.setItem('bayti_user', JSON.stringify(loggedUser));
+
+            const redirectTo = location.state?.redirectTo;
+            if (redirectTo) {
+                navigate(
+                    redirectTo,
+                    location.state?.property ? { state: { property: location.state.property } } : undefined
+                );
+                return;
+            }
+
+            navigate(homePathFor(loggedUser.role));
+        } catch (err) {
+            console.error('Google login error:', err);
+            setError('تعذر الاتصال بالخادم، تأكد من الاتصال بالإنترنت وحاول مرة أخرى.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /* أحدث نسخة من الدالة بالـref، حتى يبقى الـeffect تحت غير dependent عليها */
+    const handleGoogleRef = useRef(handleGoogleIdToken);
+    useEffect(() => {
+        handleGoogleRef.current = handleGoogleIdToken;
+    });
+
+    /* زرار Google الرسمي بيرسم نفسه داخل الحاوية — لازم نجيب السكربت أول مرة */
+    useEffect(() => {
+        const slot = googleSlotRef.current;
+        if (!slot || !googleConfigured) return undefined;
+
+        let cancelled = false;
+        requestGoogleIdToken(slot)
+            .then((idToken) => {
+                if (!cancelled) handleGoogleRef.current(idToken);
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                console.error('Google Sign-In error:', err);
+                setError(GOOGLE_ERROR_AR[err?.message] || 'تعذر تفعيل تسجيل الدخول عبر Google.');
+            });
+
+        return () => {
+            cancelled = true;
+            clearGoogleButton(slot);
+        };
+    }, [googleConfigured]);
 
     return (
         <div className="login-container">
@@ -205,13 +303,37 @@ function Login() {
                     <div className="divider">أو</div>
 
                     <div className="social-btns">
-                        <button className="social-btn" type="button">
-                            <FcGoogle size={18} /> Google
-                        </button>
-
-                        <button className="social-btn" type="button">
-                            <FaApple size={18} /> Apple
-                        </button>
+                        {googleConfigured ? (
+                            <>
+                                {/* زرارنا الجميل، وفوقه الزرار الرسمي من Google
+                                    بشفافية 0 — النقر بيوصل لـGoogle مباشرة */}
+                                <div
+                                    className={`social-btn social-btn--google${loading ? ' is-loading' : ''}`}
+                                >
+                                    <span className="social-btn--google__icon">
+                                        <FcGoogle size={19} />
+                                    </span>
+                                    <span>{loading ? 'جارٍ التحقق من حساب Google...' : 'المتابعة باستخدام Google'}</span>
+                                    <div ref={googleSlotRef} className="google-slot" aria-hidden="true" />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                {/* بدون VITE_GOOGLE_CLIENT_ID ما في زرار Google رسمي،
+                                    بنبيّن نفس الشكل بس معطّل مع سبب واضح */}
+                                <button
+                                    className="social-btn"
+                                    type="button"
+                                    disabled
+                                    title="يتطلب ضبط VITE_GOOGLE_CLIENT_ID"
+                                >
+                                    <FcGoogle size={18} /> Google
+                                </button>
+                                <p className="social-note">
+                                    تسجيل الدخول عبر Google غير مُفعّل حالياً — تابع بالبريد وكلمة المرور.
+                                </p>
+                            </>
+                        )}
                     </div>
 
                     <p className="signup-text">

@@ -68,7 +68,31 @@
 .oreq-export-btn:hover {
     background-color: #f7f9fc;
     border-color: #cfd7e4;
-    box-shadow: 0 2px 8px rgba(11, 30, 54, 0.08);
+}
+
+.oreq-export-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.oreq-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* أخطاء الإجراء (US-18) — تظهر جوّه نوافذ القبول/الرفض */
+.oreq-alert {
+    margin: 0;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.84rem;
+    line-height: 1.7;
+    color: #b42318;
+    text-align: right;
 }
 
 /* ---------- Tabs ---------- */
@@ -802,6 +826,12 @@
 .oreq-modal__btn--confirm:hover {
     background: #b91c1c;
     box-shadow: 0 2px 10px rgba(220, 38, 38, 0.28);
+}
+
+.oreq-modal__btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 @media (max-width: 560px) {

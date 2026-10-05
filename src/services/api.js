@@ -186,40 +186,400 @@ export function resolveRole(role) {
   return '';
 }
 
-/* الدور الحقيقي من الـAPI — الملف الشخصي أولاً، وعقارات المالك كاحتياط.
-   بنستخدمه وقت التشغيل لأن localStorage ممكن يكون قديم أو ناقص */
+/* الدور الحقيقي من الـAPI — الملف الشخصي أولاً، وبعدها endpoints المالك.
+   قاعدة مهمة: ما بنرجّع 'tenant' أبداً من رد غير ناجح (403/404/401).
+   أي تخمين بـ'tenant' كان بيقلب حساب المالك لصفحة المستأجر، لأن كل
+   الواجهةافتراضيها "إذا مو مالك = مستأجر" */
 export async function fetchCurrentRole() {
+  const trace = {};
+
+  /* 1) الملف الشخصي هو المرجع الأول: يقبل role أو account_type أو user_type */
   try {
     const res = await apiFetch('/api/auth/profile/');
     if (res.ok) {
       const data = await res.json().catch(() => null);
       const raw = data?.user || data;
-      const role = resolveRole(raw?.role);
-      if (role) return role;
+      trace.profileStatus = res.status;
+      trace.profileFields = raw ? Object.keys(raw).slice(0, 20) : null;
+      const role =
+        resolveRole(raw?.role) || resolveRole(raw?.account_type) || resolveRole(raw?.user_type);
+      if (role) {
+        trace.result = role;
+        console.info('[role] الدور من الملف الشخصي:', trace);
+        return role;
+      }
+    } else {
+      trace.profileStatus = res.status;
     }
   } catch {
-    /* نكمل بالاستنتاج */
+    trace.profileStatus = 'network-error';
   }
 
-  /* 2) endpoint خاص بالمالك: 200 يعني مالك، 403 يعني مستأجر.
-      أحسن من الاعتماد على /mine/ لأن 404there ممكن يعني "ما عنده عقارات" */
-  try {
-    const res = await apiFetch('/api/owner/interest-requests');
-    if (res.ok) return 'owner';
-    if (res.status === 403) return 'tenant';
-  } catch {
-    /* نكمل بالاستنتاج */
+  /* 2) أي endpoint مالك بيرجّع 200 = مالك مؤكد. غير ذلك ما بنستنتج ولا شي */
+  for (const path of ['/api/owner/interest-requests', '/api/properties/mine/']) {
+    try {
+      const res = await apiFetch(path);
+      trace[path] = res.status;
+      if (res.ok) {
+        trace.result = 'owner';
+        console.info('[role] الدور من endpoint المالك:', trace);
+        return 'owner';
+      }
+    } catch {
+      trace[path] = 'network-error';
+    }
   }
 
-  /* 3) عقارات المالك: 200 يعني مالك. أي رد تاني ما بنعتبره مستأجر
-      لأن 404 ممكن معناها "ما عنده عقارات" و401 معناها جلسة منتهية */
-  try {
-    const res = await apiFetch('/api/properties/mine/');
-    if (res.ok) return 'owner';
-    return '';
-  } catch {
-    return '';
+  trace.result = 'unknown';
+  console.info('[role] تعذّر تحديد الدور — بنخلي الواجهة تعرض افتراضي المستأجر:', trace);
+  return '';
+}
+
+/* --------------------------------------------------------------------------
+   Contact Settings — تفعيل/إلغاء استقبال طلبات الاهتمام لعقار واحد
+   PUT /api/properties/{id}/contact-settings/  body: { interest_enabled: bool }
+   للمالك فقط: 401 غير مسجّل · 403 مو مالك · 404 العقار مو موجود · 400 قيمة مو Boolean
+   القيم الافتراضية للـbackend = true
+   -------------------------------------------------------------------------- */
+export function isInterestEnabled(property) {
+  if (!property) return true;
+  if (typeof property.interest_enabled === 'boolean') return property.interest_enabled;
+  if (typeof property.interestEnabled === 'boolean') return property.interestEnabled;
+  return true;
+}
+
+export async function setPropertyInterestEnabled(id, enabled) {
+  return apiFetch(`/api/properties/${id}/contact-settings/`, {
+    method: 'PUT',
+    json: { interest_enabled: Boolean(enabled) },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Interest Requests — US-17 / US-18 / US-19
+
+   US-17  POST /api/properties/{property_id}/interest-request
+          ⚠️ بدون trailing slash — مع "/" بيرجع 404
+          body فاضي · 201 Created · لازم role=tenant
+   US-18  PUT  /api/interest-request/{request_id}/status
+          body: { status: "approved" | "rejected" } · لازم صاحب العقار
+   US-19  GET  /api/owner/interest-requests[?status=...]
+          { results: [...], count } — طلبات عقارات المستخدم الحالي فقط
+   -------------------------------------------------------------------------- */
+export const INTEREST_REQUEST_STATUSES = ['pending', 'approved', 'rejected'];
+
+/* القيم اللي الـbackend بيقبلها في PUT /status — "pending" ما مقبول */
+const SETTABLE_STATUSES = ['approved', 'rejected'];
+
+/* رد الـbackend رجع IDs بس (tenant/property/owner) — بنوحّد الشكل مرة واحدة */
+export function normalizeInterestRequest(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const status = String(raw.status || 'pending').toLowerCase();
+  return {
+    id: raw.id,
+    tenantId: raw.tenant ?? raw.tenant_id ?? null,
+    propertyId: raw.property ?? raw.property_id ?? null,
+    ownerId: raw.owner ?? raw.owner_id ?? null,
+    status: INTEREST_REQUEST_STATUSES.includes(status) ? status : 'pending',
+    createdAt: raw.created_at || raw.createdAt || '',
+    updatedAt: raw.updated_at || raw.updatedAt || '',
+    raw,
+  };
+}
+
+export async function sendInterestRequest(propertyId) {
+  /* ⚠️ المسار بدون slash بالآخر — هاي نقطة بتنسى وبتعطي 404 */
+  return apiFetch(`/api/properties/${propertyId}/interest-request`, { method: 'POST' });
+}
+
+export async function setInterestRequestStatus(requestId, status, extra = {}) {
+  const value = String(status || '').toLowerCase();
+  if (!SETTABLE_STATUSES.includes(value)) {
+    throw new Error(`حالة الطلب غير صالحة: ${status} — المسموح approved أو rejected فقط`);
   }
+  /* reason/message حق الرفض — الـbackend الحالي بيقبل status لحاله وبيتجاهلهم،
+     ولما يضيف الحقول بيصيروا محفوظين بدون أي تعديل بالواجهة */
+  const payload = { status: value };
+  if (extra.reason) payload.reason = extra.reason;
+  if (extra.message) payload.message = extra.message;
+  return apiFetch(`/api/interest-request/${requestId}/status`, {
+    method: 'PUT',
+    json: payload,
+  });
+}
+
+export async function fetchOwnerInterestRequests(status) {
+  /* الـbackend يرفض أي status خارج الثلاث بقيمته، فبنمرّر القيم الصالحة بس */
+  const qs = INTEREST_REQUEST_STATUSES.includes(String(status || '').toLowerCase())
+    ? `?status=${String(status).toLowerCase()}`
+    : '';
+  return apiFetch(`/api/owner/interest-requests${qs}`);
+}
+
+/* --------------------------------------------------------------------------
+   Google Login
+   POST /api/auth/google/   body: { id_token }
+
+   200 → { message, access, refresh, user }
+   400 → الـid_token مفقود
+   401 → الـid_token غير صالح أو غير موثّق
+   403 → ما في حساب Bayti مرتبط بهذا الإيميل
+
+   ملاحظة: ما في register — الحساب لازم يكون موجود مسبقاً بالبريد.
+   أول دخول بالـGoogle بيربط الحساب، وكل دخول بعده مباشرة.
+
+   الدالة بترجع { state, data } بدل رمي exception عشان صفحة الدخول
+   تقدر تميّز 400/401/403 وتعرض رسالة مناسبة لكل حالة.
+   -------------------------------------------------------------------------- */
+const GOOGLE_ERROR_AR = {
+  400: 'ما وصلنا بيانات Google. حاول مرة أخرى.',
+  401: 'بيانات Google غير صالحة أو غير موثّقة. حاول مرة أخرى.',
+  403: 'ما في حساب Bayti مرتبط بهذا الإيميل. أنشئ حسابك بالبريد وكلمة المرور أولاً، وبعدها ادخل بحساب Google.',
+};
+
+export async function googleLogin(idToken) {
+  if (!idToken) {
+    return { state: 'error', status: 400, data: null, message: GOOGLE_ERROR_AR[400] };
+  }
+
+  let res;
+  try {
+    /* بدون apiFetch: تسجيل الدخول ما بيكون فيه token، وapiFetch بيحاول
+       يجدد التوكن على 401 — ما إله داعي بهالمسار */
+    res = await fetch(`${API_BASE}/api/auth/google/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+  } catch {
+    return {
+      state: 'error',
+      status: 0,
+      data: null,
+      message: 'تعذر الاتصال بالخادم، تأكد من الاتصال بالإنترنت وحاول مرة أخرى.',
+    };
+  }
+
+  const data = await res.json().catch(() => null);
+
+  /* سطر واحد بالكونسول بيوفّر كل التشخيص: كود الحالة + جسم الرد */
+  console.warn('[google-login] POST /api/auth/google/ ->', res.status, data);
+
+  if (!res.ok) {
+    /* 400/401/403 لها رسائل جاهزة. أي كود ثاني (500 مثلاً) كنرجّع رقمه
+       بالرسالة بدل "خطأ غير متوقع" اللي كان بيخفي السبب الحقيقي */
+    const known = GOOGLE_ERROR_AR[res.status];
+    const detail = typeof data?.detail === 'string' ? data.detail : '';
+    return {
+      state: 'error',
+      status: res.status,
+      data,
+      message: known
+        || (detail ? mapApiError(data) : `تعذّر تسجيل الدخول عبر Google — استجابة ${res.status} من الخادم.`),
+    };
+  }
+
+  if (!data?.access) {
+    return {
+      state: 'error',
+      status: res.status,
+      data,
+      message: 'رد الخادم بدون توكن، حاول مرة أخرى.',
+    };
+  }
+
+  return { state: 'success', status: res.status, data, message: '' };
+}
+
+/* --------------------------------------------------------------------------
+   US-20 — بيانات التواصل لصاحب العقار
+   GET /api/properties/{property_id}/contact/     (Bearer token مطلوب)
+
+   200 → { phone_number }               interest_enabled = false أو الطلب approved
+   403 → { message }                     interest_enabled = true والطلب مو approved
+   401 → ما في session                   الزائر أو التوكن منتهي
+
+   الدالة بترجع نتيجة جاهزة للعرض بدل Response عشان كل صفحة تتعامل مع
+   الحالة بنفس الشكل: available · locked · unauthenticated · notfound · error
+   -------------------------------------------------------------------------- */
+export const CONTACT_LOCKED_MESSAGE =
+  'Contact information is available only after your interest request is approved.';
+
+/* الباك اند بيرجّع رسائل إنجليزية — بنترجمها قبل ما توصل للمستخدم */
+const CONTACT_MESSAGES_AR = {
+  [CONTACT_LOCKED_MESSAGE]: 'بيانات التواصل متاحة فقط بعد الموافقة على طلب الاهتمام.',
+  'Authentication credentials were not provided.': 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.',
+  'You do not have permission to view this contact information.':
+    'لا يمكنك عرض بيانات التواصل لهذا العقار.',
+};
+
+function contactMessageAr(data, fallback) {
+  const raw =
+    (typeof data?.message === 'string' && data.message) ||
+    (typeof data?.detail === 'string' && data.detail) ||
+    '';
+  return CONTACT_MESSAGES_AR[raw] || fallback;
+}
+
+export async function fetchPropertyContact(propertyId) {
+  if (propertyId === undefined || propertyId === null || propertyId === '') {
+    return { state: 'error', phone: '', message: 'تعذر تحديد العقار.', interestEnabled: null };
+  }
+
+  let res;
+  try {
+    res = await apiFetch(`/api/properties/${propertyId}/contact/`);
+  } catch {
+    return {
+      state: 'error',
+      phone: '',
+      message: 'تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.',
+      interestEnabled: null,
+    };
+  }
+
+  const data = await res.json().catch(() => null);
+  const interestEnabled =
+    typeof data?.interest_enabled === 'boolean' ? data.interest_enabled : null;
+
+  /* 200 — الرقم ظاهر: إما interest_enabled=false أو الطلب اتقبل */
+  if (res.ok) {
+    return {
+      state: 'available',
+      phone: data?.phone_number || data?.phone || '',
+      message: '',
+      interestEnabled,
+    };
+  }
+
+  /* 403 — المالك فعّل طلبات الاهتمام وما في طلب مقبول لهذا المستأجر */
+  if (res.status === 403) {
+    return {
+      state: 'locked',
+      phone: '',
+      message: contactMessageAr(data, CONTACT_MESSAGES_AR[CONTACT_LOCKED_MESSAGE]),
+      interestEnabled,
+    };
+  }
+
+  if (res.status === 401) {
+    return {
+      state: 'unauthenticated',
+      phone: '',
+      message: contactMessageAr(data, 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.'),
+      interestEnabled,
+    };
+  }
+
+  if (res.status === 404) {
+    return { state: 'notfound', phone: '', message: 'العقار غير موجود.', interestEnabled };
+  }
+
+  return {
+    state: 'error',
+    phone: '',
+    message: contactMessageAr(data, 'تعذر جلب بيانات التواصل، حاول مرة أخرى.'),
+    interestEnabled,
+  };
+}
+
+/* --------------------------------------------------------------------------
+   US-22 — الإشعارات (كل الـ endpoints تحتاج Bearer token)
+   GET   /api/notifications/                  قائمة إشعارات المستخدم
+   PATCH /api/notifications/{id}/read/        تحديد إشعار واحد كمقروء
+   PATCH /api/notifications/read-all/         تحديد كل الإشعارات كمقروءة
+   -------------------------------------------------------------------------- */
+
+/* الـbackend بيرجّع القيم بأشكال مختلفة — بنوحّدها للفلاتر في الواجهة */
+const NOTIFICATION_STATUS_MAP = {
+  approved: 'approved',
+  accepted: 'approved',
+  accept: 'approved',
+  confirmed: 'approved',
+  rejected: 'rejected',
+  declined: 'rejected',
+  declined_by_owner: 'rejected',
+  reject: 'rejected',
+  pending: 'pending',
+  new: 'pending',
+  created: 'pending',
+  interest: 'pending',
+  interest_request: 'pending',
+  interest_request_created: 'pending',
+  viewing_request: 'pending',
+};
+
+export function normalizeNotification(raw, index = 0) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = raw.id ?? raw.notification_id ?? raw.reference ?? `index-${index}`;
+  const rawStatus = String(
+    raw.status || raw.state || raw.type || raw.notification_type || ''
+  )
+    .trim()
+    .toLowerCase();
+  const readValue = raw.is_read ?? raw.read ?? raw.isRead;
+  const propertyId = raw.property_id ?? raw.property?.id ?? null;
+  const createdAt = raw.created_at || raw.createdAt || raw.timestamp || raw.time || '';
+
+  return {
+    id,
+    title: raw.title || raw.subject || '',
+    description:
+      raw.description || raw.message || raw.body || raw.text || raw.detail || '',
+    /* الوقت الخام — التنسيق بالعربي مسؤولية الواجهة */
+    createdAt,
+    read: typeof readValue === 'boolean' ? readValue : !!(raw.is_read ?? raw.read),
+    status: NOTIFICATION_STATUS_MAP[rawStatus] || 'pending',
+    /* الرابط اختياري: لو الـAPI بعت واحد، وإلا ندخل على العقار المرتبط */
+    link:
+      typeof raw.link === 'string' && raw.link.startsWith('/')
+        ? raw.link
+        : propertyId
+          ? `/property/${propertyId}`
+          : '',
+  };
+}
+
+/* الرد ممكن يكون قائمة مباشرة أو غلاف paginated (results / data / items) */
+function extractNotificationList(data) {
+  const raw = Array.isArray(data)
+    ? data
+    : data?.results ?? data?.data ?? data?.notifications ?? data?.items ?? [];
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizeNotification).filter(Boolean);
+}
+
+export async function fetchNotifications() {
+  let res;
+  try {
+    res = await apiFetch('/api/notifications/');
+  } catch {
+    return { state: 'error', items: [], message: 'تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.' };
+  }
+
+  if (res.status === 401) {
+    return {
+      state: 'unauthenticated',
+      items: [],
+      message: 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.',
+    };
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    return { state: 'error', items: [], message: mapApiError(data) };
+  }
+
+  const data = await res.json().catch(() => null);
+  return { state: 'ready', items: extractNotificationList(data), message: '' };
+}
+
+export async function markNotificationRead(id) {
+  return apiFetch(`/api/notifications/${id}/read/`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead() {
+  return apiFetch('/api/notifications/read-all/', { method: 'PATCH' });
 }
 
 export function accountTypeToApi(value) {

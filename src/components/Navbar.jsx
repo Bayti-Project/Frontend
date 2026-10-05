@@ -143,7 +143,7 @@ export default function Navbar({
           <button
             className="icon-btn"
             aria-label="الإشعارات"
-            onClick={() => navigate("/notifications")}
+            onClick={() => navigate(isOwner ? "/owner-notifications" : "/tenant-notifications")}
           >
             <FaBell />
             {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}

@@ -1,0 +1,98 @@
+/* ─── مفتاح "أنا مهتم" (PUT /api/properties/{id}/contact-settings/) ─── */
+.interest-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color .2s, border-color .2s;
+}
+
+.interest-switch:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+}
+
+.interest-switch.is-on {
+    border-color: #bfe0ec;
+    background: #e8f4f8;
+}
+
+.interest-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.interest-switch-track {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    transition: background-color .2s;
+    flex: none;
+}
+
+.interest-switch-thumb {
+    position: absolute;
+    top: 3px;
+    inset-inline-start: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(2, 39, 71, .3);
+    transition: inset-inline-start .2s;
+}
+
+.interest-switch.is-on .interest-switch-track {
+    background: #0282AD;
+}
+
+.interest-switch.is-on .interest-switch-thumb {
+    inset-inline-start: 21px;
+}
+
+.interest-switch input:focus-visible + .interest-switch-track {
+    outline: 2px solid #0282AD;
+    outline-offset: 2px;
+}
+
+.interest-switch input:disabled + .interest-switch-track {
+    opacity: .6;
+}
+
+.interest-switch-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.interest-switch-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.interest-switch.is-on .interest-switch-title {
+    color: #022747;
+}
+
+.interest-switch-hint {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #64748b;
+}
+
+@media (max-width: 480px) {
+    .interest-switch {
+        width: 100%;
+    }
+}

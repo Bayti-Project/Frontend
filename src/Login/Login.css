@@ -229,7 +229,7 @@ body,
 }
 
 .social-btn {
-  flex: 1;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -245,8 +245,69 @@ body,
   transition: background-color 0.2s;
 }
 
-.social-btn:hover {
+.social-btn:hover:not(:disabled) {
   background-color: #f8fafc;
+}
+
+.social-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---------- تسجيل الدخول عبر Google ----------
+   الشكل من عندنا (أيقونة + نص)، وفوقه الزرار الرسمي من Google بشفافية 0:
+   المستخدم يشوف زرارنا الجميل، والنقر يروح لزرار Google الأصلي (iframe)
+   عشان التوكن يطلع رسمياً — ما في أي طريقة نسجّل النقر بأنفسنا. */
+.social-btns {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.social-btn--google {
+  position: relative;
+  min-height: 48px;
+  overflow: hidden;
+  font-size: 14.5px;
+}
+
+.social-btn--google:hover:not(.is-loading) {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.social-btn--google.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.social-btn--google__icon {
+  display: inline-flex;
+  color: #ea4335;
+}
+
+.google-slot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 2;
+}
+
+.google-slot > div {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.social-note {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #94a3b8;
 }
 
 .signup-text {

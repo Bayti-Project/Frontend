@@ -136,6 +136,18 @@
   margin-bottom: 24px;
 }
 
+/* تنبيه الحفظ: الحفظ بينحفظ محلياً وبنحاول نبعثه للسيرفر تاني */
+.props-save-notice {
+  margin: 0 0 16px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e0;
+  background: #f8fafc;
+  color: #2d3748;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
 .props-results-title h2 {
   font-size: 21px;
   color: #0f2338;

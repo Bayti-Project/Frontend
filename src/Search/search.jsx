@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { FaThLarge, FaListUl, FaMapMarkerAlt, FaChevronLeft, FaChevronRight, FaShare, FaBookmark, FaBed, FaBath, FaRulerCombined } from "react-icons/fa";
 import AuthPromptModal from "../components/AuthPromptModal";
@@ -385,6 +385,8 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
   const [sortBy, setSortBy] = useState("الأحدث إضافة");
   const [page, setPage] = useState(1);
   const [prompt, setPrompt] = useState(null);
+  const [saveNotice, setSaveNotice] = useState("");
+  const noticeTimer = useRef(null);
   const savedItems = useSaved();
   const savedIds = new Set(savedItems.map((s) => String(s.id)));
 
@@ -515,6 +517,9 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
     return () => { cancelled = true; };
   }, [query, filters, page, currentSearch, navigate]);
 
+  // تنظيف تايمر التنبيه لو الصفحة انحذفت قبل ما يختفي
+  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
+
   // الترتيب يتم محليًا بعد الجلب
   const sorted = useMemo(() => {
     const list = [...properties];
@@ -578,15 +583,25 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
     navigate(`/property/${property.id}`);
   };
 
-  // زر الحفظ في الكارد: يمنع الحفظ للزائر ويطلب حساباً
-  const handleSaveClick = (property) => {
+  // زر الحفظ في الكارد: يمنع الحفظ للزائر ويطلب حساباً.
+  // الحفظ بيتحدّث محلياً فوراً، وأي فشل من السيرفر بينعرض كتنبيه بدل ما
+  // يرجع الكاش بهدوء (كان المستخدم بيضغط الحفظ ويشوف ما في أي شيagnetism).
+  const handleSaveClick = async (property) => {
     if (!isLoggedIn()) {
       setPrompt({ property, intent: "save" });
       return;
     }
-    const saved = savedIds.has(String(property.id));
-    if (saved) removeSaved(property.id);
-    else addSaved(property);
+    const wasSaved = savedIds.has(String(property.id));
+    const result = wasSaved ? removeSaved(property.id) : addSaved(property);
+    const res = await result;
+    if (!res) return;
+    if (res.message) {
+      setSaveNotice(res.message);
+      window.clearTimeout(noticeTimer.current);
+      noticeTimer.current = window.setTimeout(() => setSaveNotice(""), 6000);
+    } else {
+      setSaveNotice("");
+    }
   };
 
   return (
@@ -678,6 +693,11 @@ function SearchPage({ onHomeClick, onSearchClick, onProfileClick, onChangePasswo
           <FilterSidebar onApply={handleApply} onReset={handleReset} />
 
           <div className="props-results">
+            {saveNotice && (
+              <p className="props-save-notice" role="status">
+                {saveNotice}
+              </p>
+            )}
             {error ? (
               <div className="props-map-placeholder" style={{ minHeight: 200 }}>
                 <p>{error}</p>

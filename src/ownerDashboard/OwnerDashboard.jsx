@@ -288,8 +288,8 @@ export default function OwnerDashboard() {
           setOwnerRequests(
             profileData.recent_interest_requests.map((item) => ({
               id: item.id,
-              name: item.tenant_name || "مستأجر",
-              property: item.property_title || "",
+              name: item.tenant_name || (item.tenant != null ? `مستأجر #${item.tenant}` : "مستأجر"),
+              property: item.property_title || (item.property != null ? `عقار #${item.property}` : ""),
               status: STATUS_STYLES[item.status] || STATUS_STYLES.pending,
             }))
           );
@@ -303,8 +303,8 @@ export default function OwnerDashboard() {
           setOwnerRequests(
             reqList.slice(0, 4).map((item) => ({
               id: item.id,
-              name: item.tenant_name || "مستأجر",
-              property: item.property_title || "",
+              name: item.tenant_name || (item.tenant != null ? `مستأجر #${item.tenant}` : "مستأجر"),
+              property: item.property_title || (item.property != null ? `عقار #${item.property}` : ""),
               status: STATUS_STYLES[item.status] || STATUS_STYLES.pending,
             }))
           );

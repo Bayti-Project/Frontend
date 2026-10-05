@@ -2,8 +2,30 @@ import { useEffect, useState } from "react";
 import { saveProperty, unsaveProperty, fetchSavedProperties } from "../services/api.js";
 
 const STORAGE_KEY = "bayti_saved_properties";
+/* عقارات المستخدم حذفها محلياً وماوصل الحذف للسيرفر — منستثنيها من المزامنة
+   لحد ما السيرفر يؤكد، وبعدها بينمسح */
+const REMOVALS_KEY = "bayti_saved_pending_removals";
 
 const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
+
+function loadRemovals() {
+    try {
+        const raw = JSON.parse(localStorage.getItem(REMOVALS_KEY) || "[]");
+        return new Set(Array.isArray(raw) ? raw.map(String) : []);
+    } catch {
+        return new Set();
+    }
+}
+
+let pendingRemovals = loadRemovals();
+
+function persistRemovals() {
+    try {
+        localStorage.setItem(REMOVALS_KEY, JSON.stringify([...pendingRemovals]));
+    } catch {
+        /* تجاهل تعذر الحفظ */
+    }
+}
 
 function loadSaved() {
     try {
@@ -47,8 +69,18 @@ export function isSaved(id) {
     return savedItems.some((p) => String(p.id) === String(id));
 }
 
-/* الحفظ والإلغاء يروحون على الـAPI مع تحديث محلي فوري،efnرجع للنسخة السابقة
-   إذا الـAPI رفض الطلب. 400/404 معناها الحالة متطابقة أصلاً فبنعتبرها نجاح */
+/* الحفظ والإلغاء يروحون على الـAPI مع تحديث محلي فوري. إذا الـAPI رفض
+   الطلب ما بنمسح اللي شافه المستخدم: بنخليه محلياً وبنعلّمه "معلّق" لحد ما
+   ينجح الإرسال (أو أول ما يسجّل دخول) — قبل كان بنرجع للنسخة السابقة
+   بصمت، فما كان المستخدم شايف شي بينمسح بدون سبب. */
+function describeSaveError(status, data) {
+    if (status === 401) return "انتهت الجلسة — حفظنا العقار محلياً وبنرسله أول ما تسجّل دخول.";
+    if (status === 403) return "ما إلك صلاحية على هذا العقار — حفظناه محلياً.";
+    if (status === 404) return "العقار مو موجود بالسيرفر — حفظناه محلياً.";
+    if (status >= 500) return "خطأ بالسيرفر — حفظناه محلياً وبنحاول نبعثه تاني.";
+    return data?.message || data?.detail || "تعذر الحفظ بالسيرفر — حفظناه محلياً.";
+}
+
 export function addSaved(property) {
     const item = toSavedItem(property);
     if (!item || item.id === undefined || item.id === null || item.id === "") {
@@ -56,49 +88,46 @@ export function addSaved(property) {
     }
     if (isSaved(item.id)) return Promise.resolve({ ok: true });
 
-    const previous = savedItems;
+    pendingRemovals.delete(String(item.id));
     savedItems = [...savedItems, item];
     persist();
 
-    if (!isLoggedIn()) return Promise.resolve({ ok: true });
+    /* الزائر: بينحفظ محلياً وبينرفع للسيرفر أول ما يسجّل دخول */
+    if (!isLoggedIn()) return Promise.resolve({ ok: true, local: true });
 
     return saveProperty(item.id)
         .then(async (res) => {
             if (res.ok) return { ok: true };
             const data = await res.json().catch(() => ({}));
-            if (res.status === 400) return { ok: true };
-            savedItems = previous;
-            persist();
-            return { ok: false, message: data?.message || "تعذر حفظ العقار" };
+            return { ok: true, pending: true, message: describeSaveError(res.status, data) };
         })
-        .catch(() => {
-            savedItems = previous;
-            persist();
-            return { ok: false, message: "تعذر الاتصال بالخادم" };
-        });
+        .catch(() => ({
+            ok: true,
+            pending: true,
+            message: "تعذر الاتصال بالسيرفر — حفظنا العقار محلياً وبنبعثه أول ما يرجع الاتصال.",
+        }));
 }
 
 export function removeSaved(id) {
-    const previous = savedItems;
     savedItems = savedItems.filter((p) => String(p.id) !== String(id));
+    /* الحذف المعلّق: لازم نستثنيه من مزامنة السيرفر، وإلا رجع تاني فوراً */
+    pendingRemovals.add(String(id));
+    persistRemovals();
     persist();
 
-    if (!isLoggedIn()) return Promise.resolve({ ok: true });
+    if (!isLoggedIn()) return Promise.resolve({ ok: true, local: true });
 
     return unsaveProperty(id)
         .then(async (res) => {
-            if (res.ok) return { ok: true };
+            if (res.ok || res.status === 404) {
+                pendingRemovals.delete(String(id));
+                persistRemovals();
+                return { ok: true };
+            }
             await res.json().catch(() => ({}));
-            if (res.status === 404) return { ok: true };
-            savedItems = previous;
-            persist();
-            return { ok: false, message: "تعذر إلغاء حفظ العقار" };
+            return { ok: true, pending: true, message: "تعذر الإلغاء بالسيرفر — حذفناه محلياً." };
         })
-        .catch(() => {
-            savedItems = previous;
-            persist();
-            return { ok: false, message: "تعذر الاتصال بالخادم" };
-        });
+        .catch(() => ({ ok: true, pending: true, message: "تعذر الاتصال — حذفناه محلياً." }));
 }
 
 export function toggleSaved(property) {
@@ -127,25 +156,76 @@ export async function clearSaved() {
     return { ok: true };
 }
 
-export async function syncSavedFromApi() {
-    if (!isLoggedIn()) return getSaved();
+/* رد السيرفر ممكن يطلع بأكثر من شكل: مصفوفة مباشرة، أو saved_properties،
+   أو results. كنا بنقرأ saved_properties بس، وأي شكل ثاني كان بيرجّع []
+   وبيمسح المحفوظات كلها — كان هاد سبب "فظطت حفظ وما ظهر بالمحفوظات". */
+function parseSavedPayload(data) {
+    const raw =
+        (Array.isArray(data) && data) ||
+        (Array.isArray(data?.saved_properties) && data.saved_properties) ||
+        (Array.isArray(data?.results) && data.results) ||
+        (Array.isArray(data?.saved) && data.saved) ||
+        (Array.isArray(data?.items) && data.items) ||
+        [];
+    return raw
+        .map((entry) => {
+            const item = toSavedItem(entry?.property || entry);
+            if (!item) return null;
+            return { ...item, savedAt: entry?.created_at || entry?.saved_at || null };
+        })
+        .filter(Boolean);
+}
 
-    try {
-        const res = await fetchSavedProperties();
-        if (!res.ok) return getSaved();
-        const data = await res.json().catch(() => ({}));
-        const list = Array.isArray(data?.saved_properties) ? data.saved_properties : [];
-        savedItems = list
-            .map((entry) => {
-                const item = toSavedItem(entry?.property || entry);
-                return item ? { ...item, savedAt: entry?.created_at || null } : null;
-            })
-            .filter(Boolean);
-        persist();
-    } catch {
-        /* نخلي النسخة المحلية */
-    }
-    return getSaved();
+let syncInFlight = null;
+
+/* زرار الحفظ موجود بكل كارد بالبحث، فبدون حarness واحد كل كارد بيفتح
+   طلب للسيرفر لحاله */
+export function syncSavedFromApi() {
+    if (!isLoggedIn()) return Promise.resolve(getSaved());
+    if (syncInFlight) return syncInFlight;
+
+    syncInFlight = (async () => {
+        try {
+            const res = await fetchSavedProperties();
+            if (!res.ok) {
+                console.warn("[saved] تعذّر جلب المحفوظات من السيرفر:", res.status);
+                return getSaved();
+            }
+            const data = await res.json().catch(() => ({}));
+            const fromApi = parseSavedPayload(data).filter(
+                (item) => !pendingRemovals.has(String(item.id))
+            );
+            /* اللي شفناه محلياً وما رجع من السيرفر (زائر قبل الدخول، أو طلب
+               فاشل): بنحتفظ فيه بدل ما نمسحه، وبنبعثه للسيرفر هلق */
+            const localOnly = savedItems.filter(
+                (item) => !fromApi.some((s) => String(s.id) === String(item.id))
+            );
+
+            savedItems = [...fromApi, ...localOnly];
+            persist();
+
+            localOnly.forEach((item) => {
+                saveProperty(item.id).catch(() => {});
+            });
+            pendingRemovals.forEach((id) => {
+                unsaveProperty(id)
+                    .then((r) => {
+                        if (r.ok || r.status === 404) {
+                            pendingRemovals.delete(id);
+                            persistRemovals();
+                        }
+                    })
+                    .catch(() => {});
+            });
+        } catch (err) {
+            console.warn("[saved] فشل المزامنة — بنبقى على النسخة المحلية:", err);
+        } finally {
+            syncInFlight = null;
+        }
+        return getSaved();
+    })();
+
+    return syncInFlight;
 }
 
 export function subscribeSaved(cb) {
@@ -217,7 +297,8 @@ export function toSavedItem(p) {
         currency,
         bedrooms: p.bedrooms || p.beds || 0,
         bathrooms: p.bathrooms || p.baths || 0,
-        area: p.area_sqm || p.area || 0,
+        /* size: كارد البحث بيحوّل area_sqm إلى size قبل ما يمرّر العقار */
+        area: p.area_sqm || p.area || p.size || 0,
         image: image || "",
         imagePosition: p.imagePosition,
         status: p.status,

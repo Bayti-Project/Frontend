@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { apiFetch, resolveMediaUrl, isOwnerRole } from "../services/api";
+import { apiFetch, resolveMediaUrl, isOwnerRole, isInterestEnabled, fetchPropertyContact, sendInterestRequest } from "../services/api";
 import { useStoredUser, useUserAvatar } from "../state/currentUser";
 import defaultAvatar from "../components/default-avatar.svg";
 import ExistingInterestModal from "../components/ExistingInterestModal";
@@ -16,6 +16,7 @@ const mockProperty = {
     currency: "₪",
     type: "شقة",
     status: "متاح",
+    interestEnabled: true,
     owner: {
         id: null,
         name: "احمد رمضان",
@@ -55,16 +56,13 @@ const mockProperty = {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  طلب الاهتمام (Interest request)                                            */
-/*  ⚠️ المسار الحقيقي (US-17) — بدون trailing slash، مع slash بيرجع 404      */
-/*  (`/api/properties/{id}/interest-request`)                                      */
-/*  الشيفرة مربوطة فعلياً — الباك اند فيه POST فقط للطلب                          */
-/*  عدّل هذا المسار وشكل الاستجابة ليطابق الـ Backend عندك                      */
-/*  POST   → إرسال طلب اهتمام (201 · body فاضي · للـtenant فقط)                  */
-/*  GET    → ❌ ما موجود بالـbackend — ما في طريقة للمستأجر يتابع حالة طلبه        */
-/*  DELETE → ❌ ما موجود بالـbackend — ما في إلغاء للطلب                           */
+/*  طلب الاهتمام (Interest request) — US-17                                   */
+/*  الشيفرة مربوطة فعلياً: POST /api/properties/{id}/interest-request          */
+/*  (بدون trailing slash — مع "/" بيرجع 404) → sendInterestRequest في api.js  */
+/*  body فاضي · 201 Created · لازم role=tenant                                */
+/*  403 → مو مستأجر · 400 → طلب مكرر / عقار مؤجر / عقاره هو                   */
+/*  404 → العقار مو موجود · ما في GET للحالة ولا DELETE للإلغاء               */
 /* -------------------------------------------------------------------------- */
-const interestUrl = (propertyId) => `/api/properties/${propertyId}/interest-request`;
 
 const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
 
@@ -267,6 +265,7 @@ function mapListProperty(p) {
         currency: "₪",
         type: PROPERTY_TYPE_LABELS[p.property_type || p.type] || p.type || "شقة",
         status: STATUS_LABELS[p.status] || p.status || "متاح",
+        interestEnabled: isInterestEnabled(p),
         owner: mapOwner(p, "مالك العقار"),
         stats: stats.length ? stats : mockProperty.stats,
         description: p.description || mockProperty.description,
@@ -298,6 +297,7 @@ function mapApiProperty(p) {
         currency: "₪",
         type: PROPERTY_TYPE_LABELS[p.property_type || p.type] || p.type || "شقة",
         status: STATUS_LABELS[p.status] || p.status || "متاح",
+        interestEnabled: isInterestEnabled(p),
         owner: mapOwner(p, p.owner?.email || "مالك العقار"),
         stats: stats.length ? stats : mockProperty.stats,
         description: p.description || mockProperty.description,
@@ -571,7 +571,7 @@ function Lightbox({ images, index, onClose, onNext, onPrev }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  فورم التواصل (3 حالات: قبل الطلب / قيد المعالجة / تمت الموافقة)              */
+/*  فورم التواصل                                                              */
 /* -------------------------------------------------------------------------- */
 function OwnerRow({ name, avatar }) {
     return (
@@ -586,18 +586,101 @@ function OwnerRow({ name, avatar }) {
     );
 }
 
+/* --------------------------------------------------------------------------
+   الحالات كلها بتستنتج من رد الـbackend على
+   GET /api/properties/{id}/contact/ (US-20):
+
+   contact.state = "available"        الرقم ظاهر (طلب مقبول أو interest معطّل)
+   contact.state = "locked"           403 — لازم يتبعت طلب اهتمام أول
+   contact.state = "unauthenticated"  401 — ما في session
+   ------------------------------------------------------------------------ */
 function ContactCard({
     viewerName,
     viewerAvatar,
     status,
-    phone,
+    contact,
+    interestEnabled,
     submitting,
     error,
     onInterest,
+    onLogin,
     onMessage,
     onCall,
     onWhatsApp,
 }) {
+    const phone = contact.phone || "";
+    const loading = contact.status === "loading";
+
+    /* 401 — المستخدم غير مسجّل أو الجلسة منتهية */
+    if (contact.state === "unauthenticated") {
+        return (
+            <aside className="pdo-owner-card">
+                <OwnerRow name={viewerName} avatar={viewerAvatar} />
+
+                <div className="pdo-contact-locked">
+                    <Icon name="lock" size={22} />
+                    <span>{contact.message}</span>
+                </div>
+
+                <button className="pdo-btn pdo-btn--primary pdo-btn--block" onClick={onLogin}>
+                    <Icon name="user" size={16} />
+                    تسجيل الدخول
+                </button>
+            </aside>
+        );
+    }
+
+    /* الرقم ظاهر: إما interest_enabled=false أو في طلب اهتمام مقبول */
+    if (contact.state === "available") {
+        const direct = interestEnabled === false;
+
+        return (
+            <aside className="pdo-owner-card">
+                <div className="pdo-contact-approved">
+                    <span className="pdo-contact-approved__icon">
+                        <Icon name="checkCircle" size={18} />
+                    </span>
+                    <div>
+                        <strong>
+                            {direct ? "المالك يسمح بالتواصل المباشر." : "تمت الموافقة على طلبك."}
+                        </strong>
+                        <p>
+                            {direct
+                                ? "يمكنك مراسلته أو الاتصال به الآن بدون طلب اهتمام."
+                                : "المالك بانتظار تواصلك لإتمام الإجراءات وتحديد موعد المعاينة."}
+                        </p>
+                    </div>
+                </div>
+
+                <OwnerRow name={viewerName} avatar={viewerAvatar} />
+
+                <hr className="pdo-divider pdo-divider--tight" />
+
+                <div className="pdo-contact-phone">
+                    <span className="pdo-contact-phone__label">رقم الجوال</span>
+                    <span className="pdo-contact-phone__number" dir="ltr">
+                        {phone || "—"}
+                    </span>
+                </div>
+
+                <button className="pdo-btn pdo-btn--primary" onClick={onCall} disabled={!phone}>
+                    اتصل بالمالك
+                    <Icon name="phone" size={16} />
+                </button>
+
+                <button className="pdo-btn pdo-btn--whatsapp" onClick={onWhatsApp} disabled={!phone}>
+                    محادثة عبر الواتساب
+                    <Icon name="whatsapp" size={16} />
+                </button>
+
+                <button className="pdo-btn pdo-btn--outline pdo-btn--block" onClick={onMessage}>
+                    <Icon name="message" size={16} />
+                    ارسال رسالة عبر الرسائل
+                </button>
+            </aside>
+        );
+    }
+
     /* الحالة 2: تم إرسال الطلب وبانتظار موافقة المالك */
     if (status === "pending") {
         return (
@@ -629,54 +712,30 @@ function ContactCard({
         );
     }
 
-    /* الحالة 3: المالك وافق على الطلب */
-    if (status === "accepted") {
-        return (
-            <aside className="pdo-owner-card">
-                <div className="pdo-contact-approved">
-                    <span className="pdo-contact-approved__icon">
-                        <Icon name="checkCircle" size={18} />
-                    </span>
-                    <div>
-                        <strong>تمت الموافقة على طلبك.</strong>
-                        <p>المالك بانتظار تواصلك لإتمام الإجراءات وتحديد موعد المعاينة.</p>
-                    </div>
-                </div>
-
-                <OwnerRow name={viewerName} avatar={viewerAvatar} />
-
-                <hr className="pdo-divider pdo-divider--tight" />
-
-                <div className="pdo-contact-phone">
-                    <span className="pdo-contact-phone__label">رقم الجوال</span>
-                    <span className="pdo-contact-phone__number" dir="ltr">
-                        {phone || "—"}
-                    </span>
-                </div>
-
-<button className="pdo-btn pdo-btn--primary" onClick={onCall} disabled={!phone}>
-                اتصل بالمالك
-                <Icon name="phone" size={16} />
-            </button>
-            <button className="pdo-btn pdo-btn--whatsapp" onClick={onWhatsApp} disabled={!phone}>
-                    محادثة عبر الواتساب
-                    <Icon name="whatsapp" size={16} />
-                </button>
-            </aside>
-        );
-    }
-
-    /* الحالة 1: الفورم الافتراضي */
+    /* الحالة 1: لسا ما في موافقة — الرقم مخفي لسبب نعرفه من الـbackend */
     return (
         <aside className="pdo-owner-card">
             <OwnerRow name={viewerName} avatar={viewerAvatar} />
 
-            <button className="pdo-btn pdo-btn--primary" onClick={onInterest} disabled={submitting}>
-                {submitting ? "جاري الإرسال..." : "أنا مهتم"}
-                {!submitting && <Icon name="arrowLeft" size={16} />}
+            <button className="pdo-btn pdo-btn--primary" onClick={onInterest} disabled={submitting || loading}>
+                {submitting
+                    ? "جاري الإرسال..."
+                    : loading
+                        ? "جاري التحقق..."
+                        : "أنا مهتم"}
+                {!submitting && !loading && <Icon name="arrowLeft" size={16} />}
             </button>
 
             {error && <p className="pdo-contact-error">{error}</p>}
+
+            {/* 403 — سبب الإخفاء الحقيقي من الـbackend */}
+            {contact.state === "locked" && contact.message && (
+                <p className="pdo-contact-error">{contact.message}</p>
+            )}
+
+            {contact.state === "error" && contact.message && (
+                <p className="pdo-contact-error">{contact.message}</p>
+            )}
 
             <button
                 className="pdo-btn pdo-btn--outline pdo-btn--block"
@@ -888,7 +947,49 @@ export default function PropertyDetailsOwner() {
     }, [id, navigate]);
 
     /* ما في GET للحالة ولا DELETE للإلغاء بالـbackend حالياً، فما في طلب يُرسل
-   عند فتح الصفحة ولا فحص دوري. الحالة بتتحدث مرة واحدة بعد POST بنجاح. */
+   عند فتح الصفحة ولا فحص دوري. حالة طلب الاهتمام بتجيبها من US-20 بدل ما
+   نفترضها: 200 يعني فيه موافقة (أو interest معطّل)، و403 يعني لسا ما في. */
+
+    /* US-20 — رقم المالك من الـbackend فقط.
+       ملاحظة أمنية: ما بنستخدم p.owner.phone أبداً، لأن رقم المالك ما
+       بيوصل للـtenant إلا بعد موافقة المالك (أو interest_enabled=false) */
+    const [contact, setContact] = useState({
+        status: "idle",
+        state: "",
+        phone: "",
+        message: "",
+    });
+
+    const loadContact = async () => {
+        setContact({ status: "loading", state: "", phone: "", message: "" });
+        const result = await fetchPropertyContact(id);
+        setContact({
+            status: "ready",
+            state: result.state,
+            phone: result.phone,
+            message: result.message,
+        });
+    };
+
+    useEffect(() => {
+        /* المالك على عقاره ما عنده بطاقة تواصل — ما في داعي نطلب */
+        if (!isLoggedIn() || isMyProperty) return undefined;
+        let active = true;
+        (async () => {
+            setContact({ status: "loading", state: "", phone: "", message: "" });
+            const result = await fetchPropertyContact(id);
+            if (!active) return;
+            setContact({
+                status: "ready",
+                state: result.state,
+                phone: result.phone,
+                message: result.message,
+            });
+        })();
+        return () => {
+            active = false;
+        };
+    }, [id, isMyProperty]);
 
     const closeLightbox = () => setLightboxIndex(null);
     const nextImage = () =>
@@ -911,7 +1012,7 @@ export default function PropertyDetailsOwner() {
         setInterestError("");
         try {
             /* body فاضي — الـendpoint بيتوقع Authorization + لا شي تاني */
-            const res = await apiFetch(interestUrl(id), { method: "POST" });
+            const res = await sendInterestRequest(id);
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 console.error("[interest] فشل الإرسال", res.status, data);
@@ -927,6 +1028,8 @@ export default function PropertyDetailsOwner() {
             setInterest(parseInterest(data).status === "none"
                 ? { status: "pending", phone: "" }
                 : parseInterest(data));
+            /* نعاين US-20 من جديد: لو الطلب اتقبل فوراً بيرجع الرقم */
+            loadContact();
         } catch (err) {
             console.error("[interest] استثناء أثناء الإرسال", err);
             setInterestError("تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.");
@@ -943,7 +1046,8 @@ export default function PropertyDetailsOwner() {
         navigate("/messages", { state: { propertyId: id, ownerId: property.owner.id } });
     };
 
-    const ownerPhone = interest.phone || property.owner.phone;
+    /* الرقم بييجي من US-20 بس — ما بنقرأه من بيانات العقار ولا من الـstate */
+    const ownerPhone = contact.phone;
 
     const onCall = () => {
         if (ownerPhone) window.location.href = `tel:${ownerPhone}`;
@@ -1073,10 +1177,16 @@ export default function PropertyDetailsOwner() {
                             viewerName={viewerName}
                             viewerAvatar={viewerAvatar}
                             status={interest.status}
-                            phone={ownerPhone}
+                            contact={contact}
+                            interestEnabled={property.interestEnabled !== false}
                             submitting={submitting}
                             error={interestError}
                             onInterest={onInterest}
+                            onLogin={() =>
+                                navigate("/login", {
+                                    state: { redirectTo: `/property/${id}` },
+                                })
+                            }
                             onMessage={onMessage}
                             onCall={onCall}
                             onWhatsApp={onWhatsApp}

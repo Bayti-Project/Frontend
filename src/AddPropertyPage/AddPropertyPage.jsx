@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FiImage, FiEye } from "react-icons/fi";
 import { saveDraft, loadPersistedDraft, clearPersistedDraft } from "../state/addPropertyDraft";
 import "./AddPropertyPage.css";
+import "../components/InterestCheckbox.css";
 
 /* ---------- الأيقونات ---------- */
 function InfoCircleIcon({ size = 14 }) {
@@ -71,7 +72,7 @@ const initialFeatures = {
     generator: false,
     tank: false,
     well: false,
-    Interested: false,
+    Interested: true,
 };
 
 const initialFormData = {
@@ -457,13 +458,24 @@ export default function AddPropertyPage() {
                         </div>
 
                         <div className="ap-features">
-                            <h3>تفعيل معلومات التواصل</h3>
-                            <div className="ap-features-grid">
-                                <label className="ap-checkbox">
-                                    <input type="checkbox" checked={features.Interested} onChange={() => toggleFeature("Interested")} />
-                                    أنا مهتم (في حال تم تفعيل هذا الخيار سوف يتم إخفاء معلومات تواصلك إلا بموافقتك)
-                                </label>
-                            </div>
+                            <h3>إخفاء معلومات التواصل</h3>
+                            <label className={`interest-switch${features.Interested ? " is-on" : ""}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={features.Interested}
+                                    aria-label="إخفاء معلومات التواصل"
+                                    onChange={() => toggleFeature("Interested")}
+                                />
+                                <span className="interest-switch-track" aria-hidden="true">
+                                    <span className="interest-switch-thumb" />
+                                </span>
+                                <span className="interest-switch-box">
+                                    <span className="interest-switch-title">أنا مهتم</span>
+                                    <span className="interest-switch-hint">
+                                        عند التفعيل تبقى معلومات تواصلك (رقم الجوال والواتس) مخفية عن المستأجر، ولا تظهر له إلا بعد موافقتك على طلب الاهتمام. عند الإلغاء تظهر أزرار الواتس والرسائل ورقمك للمستأجر مباشرة.
+                                    </span>
+                                </span>
+                            </label>
                         </div>
                     </section>
                 </form>
