@@ -303,29 +303,27 @@ function Login() {
                     <div className="divider">أو</div>
 
                     <div className="social-btns">
-                        {googleConfigured ? (
+{googleConfigured ? (
                             <>
-                                {/* زرارنا الجميل، وفوقه الزرار الرسمي من Google
-                                    بشفافية 0 — النقر بيوصل لـGoogle مباشرة */}
+                                {/* عند تفعيل التكوين يظهر زر Google المخصص ويُفعّل One Tap من GIS */}
                                 <div
                                     className={`social-btn social-btn--google${loading ? ' is-loading' : ''}`}
                                 >
                                     <span className="social-btn--google__icon">
                                         <FcGoogle size={19} />
                                     </span>
-                                    <span>{loading ? 'جارٍ التحقق من حساب Google...' : 'المتابعة باستخدام Google'}</span>
+                                    <span>{loading ? 'جاري تسجيل الدخول عبر Google...' : 'متابعة باستخدام Google'}</span>
                                     <div ref={googleSlotRef} className="google-slot" aria-hidden="true" />
                                 </div>
                             </>
                         ) : (
                             <>
-                                {/* بدون VITE_GOOGLE_CLIENT_ID ما في زرار Google رسمي،
-                                    بنبيّن نفس الشكل بس معطّل مع سبب واضح */}
+                                {/* في حال عدم وجود VITE_GOOGLE_CLIENT_ID يظهر زر غير مفعل مع تلميح */}
                                 <button
                                     className="social-btn"
                                     type="button"
                                     disabled
-                                    title="يتطلب ضبط VITE_GOOGLE_CLIENT_ID"
+                                    title="مفتاح Google غير مهيأ"
                                 >
                                     <FcGoogle size={18} /> Google
                                 </button>
