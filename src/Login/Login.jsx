@@ -329,9 +329,7 @@ function Login() {
                                 >
                                     <FcGoogle size={18} /> Google
                                 </button>
-                                <p className="social-note">
-                                    تسجيل الدخول عبر Google غير مُفعّل حالياً — تابع بالبريد وكلمة المرور.
-                                </p>
+
                             </>
                         )}
                     </div>
