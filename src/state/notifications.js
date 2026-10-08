@@ -99,14 +99,14 @@ function applyLocally(ids) {
     });
 }
 
-function revertLocally(ids) {
+function revertLocally(ids, message = "تعذر تحديث حالة الإشعار، حاول مرة أخرى.") {
     const keys = new Set(ids.map(String));
     emit({
         items: snapshot.items.map((item) =>
             keys.has(String(item.id)) ? { ...item, read: false } : item
         ),
         saving: snapshot.saving.filter((id) => !keys.has(String(id))),
-        error: "تعذر تحديث حالة الإشعار، حاول مرة أخرى.",
+        error: message,
     });
 }
 
@@ -129,6 +129,10 @@ export async function readNotification(id) {
             });
             return;
         }
+        if (res && res.status === 403) {
+            revertLocally([id], "ليس لديك صلاحية لتحديث حالة هذا الإشعار.");
+            return;
+        }
         if (res && !res.ok && res.status !== 404) revertLocally([id]);
         else endSaving([id]);
     } catch {
@@ -149,6 +153,10 @@ export async function readAllNotifications() {
                 status: "unauthenticated",
                 error: "انتهت الجلسة، يرجى تسجيل الدخول من جديد.",
             });
+            return;
+        }
+        if (res && res.status === 403) {
+            revertLocally(unreadIds, "ليس لديك صلاحية لتحديث الإشعارات.");
             return;
         }
         if (res && !res.ok) revertLocally(unreadIds);

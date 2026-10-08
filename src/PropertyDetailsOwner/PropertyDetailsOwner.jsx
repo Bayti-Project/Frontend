@@ -609,6 +609,9 @@ function ContactCard({
     onWhatsApp,
 }) {
     const phone = contact.phone || "";
+    /* Sprint 4: whatsapp_number انضاف للـcontact API — بنفضّله على الرقم العادي
+       للزر الخاص بالواتساب، والباقي للاتصال/العرض */
+    const whatsapp = contact.whatsapp || phone;
     const loading = contact.status === "loading";
 
     /* 401 — المستخدم غير مسجّل أو الجلسة منتهية */
@@ -668,7 +671,7 @@ function ContactCard({
                     <Icon name="phone" size={16} />
                 </button>
 
-                <button className="pdo-btn pdo-btn--whatsapp" onClick={onWhatsApp} disabled={!phone}>
+                <button className="pdo-btn pdo-btn--whatsapp" onClick={onWhatsApp} disabled={!phone && !whatsapp}>
                     محادثة عبر الواتساب
                     <Icon name="whatsapp" size={16} />
                 </button>
@@ -958,15 +961,17 @@ export default function PropertyDetailsOwner() {
         state: "",
         phone: "",
         message: "",
+        whatsapp: "",
     });
 
     const loadContact = async () => {
-        setContact({ status: "loading", state: "", phone: "", message: "" });
+        setContact({ status: "loading", state: "", phone: "", message: "", whatsapp: "" });
         const result = await fetchPropertyContact(id);
         setContact({
             status: "ready",
             state: result.state,
             phone: result.phone,
+            whatsapp: result.whatsapp,
             message: result.message,
         });
     };
@@ -976,13 +981,14 @@ export default function PropertyDetailsOwner() {
         if (!isLoggedIn() || isMyProperty) return undefined;
         let active = true;
         (async () => {
-            setContact({ status: "loading", state: "", phone: "", message: "" });
+            setContact({ status: "loading", state: "", phone: "", message: "", whatsapp: "" });
             const result = await fetchPropertyContact(id);
             if (!active) return;
             setContact({
                 status: "ready",
                 state: result.state,
                 phone: result.phone,
+                whatsapp: result.whatsapp,
                 message: result.message,
             });
         })();
@@ -1046,15 +1052,17 @@ export default function PropertyDetailsOwner() {
         navigate("/messages", { state: { propertyId: id, ownerId: property.owner.id } });
     };
 
-    /* الرقم بييجي من US-20 بس — ما بنقرأه من بيانات العقار ولا من الـstate */
+    /* الرقم بييجي من US-20 بس — ما بنقرأه من بيانات العقار ولا من الـstate.
+       Sprint 4: whatsapp_number منفصل لو موجود، والرقم العادي fallback */
     const ownerPhone = contact.phone;
+    const ownerWhatsapp = contact.whatsapp || ownerPhone;
 
     const onCall = () => {
         if (ownerPhone) window.location.href = `tel:${ownerPhone}`;
     };
 
     const onWhatsApp = () => {
-        const digits = String(ownerPhone || "").replace(/\D/g, "");
+        const digits = String(ownerWhatsapp || "").replace(/\D/g, "");
         if (digits) window.open(`https://wa.me/${digits}`, "_blank", "noopener");
     };
 

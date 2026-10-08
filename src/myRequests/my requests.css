@@ -331,3 +331,47 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Sprint 4 — رمز الطلب (request_code) + حالات التحميل/الخطأ */
+.item-code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    direction: ltr;
+}
+
+.item-left {
+    padding-inline-start: 0;
+}
+
+.requests-error {
+    padding: 20px 0;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.requests-retry {
+    display: block;
+    margin: 0 auto 8px;
+    padding: 9px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #0284c7;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.requests-retry:hover {
+    background: #0369a1;
+}

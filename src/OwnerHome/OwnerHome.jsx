@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, resolveMediaUrl, GOVERNORATE_OPTIONS } from "../services/api";
 import { useSaved, toggleSaved } from "../state/savedProperties";
@@ -98,12 +98,145 @@ function CheckIcon() {
         </svg>
     );
 }
+function ChevronIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" width="11" height="11">
+            <path d="m6 9.5 6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+function TickIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
+            <path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
 
 const STATUS_LABELS = { available: "متاح", reserved: "محجوز", rented: "مؤجر" };
+const STATUS_HINTS = {
+    available: "قابل للإيجار الآن",
+    reserved: "حجز مبدئي بانتظار التعاقد",
+    rented: "مؤجر حالياً",
+};
 const STATUS_KEYS = Object.keys(STATUS_LABELS);
 
 // الـ Backend يقبل رقماً فقط ل bedrooms، لذلك لا قيم مثل "4+"
 const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
+
+function StatusDropdown({ value, onChange, disabled = false, updating = false }) {
+    const [open, setOpen] = useState(false);
+    const triggerRef = useRef(null);
+    const menuRef = useRef(null);
+
+    const placeMenu = () => {
+        const trigger = triggerRef.current;
+        const menu = menuRef.current;
+        if (!trigger || !menu) return;
+
+        const rect = trigger.getBoundingClientRect();
+        const width = Math.max(rect.width, 178);
+        const height = menu.offsetHeight;
+        const left = Math.min(
+            Math.max(rect.left, 8),
+            Math.max(8, window.innerWidth - width - 8)
+        );
+        const belowTop = rect.bottom + 8;
+        const aboveTop = rect.top - height - 8;
+        const top =
+            belowTop + height <= window.innerHeight - 8
+                ? belowTop
+                : aboveTop >= 8
+                    ? aboveTop
+                    : Math.max(8, belowTop);
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+        menu.style.width = `${width}px`;
+    };
+
+    useLayoutEffect(() => {
+        if (open) placeMenu();
+    }, [open]);
+
+    useEffect(() => {
+        if (!open) return;
+        const onPointerDown = (e) => {
+            if (e.target.closest && !e.target.closest(".status-dropdown")) setOpen(false);
+        };
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") setOpen(false);
+        };
+        const reflow = () => placeMenu();
+
+        document.addEventListener("mousedown", onPointerDown);
+        document.addEventListener("keydown", onKeyDown);
+        window.addEventListener("resize", reflow);
+        document.addEventListener("scroll", reflow, true);
+
+        return () => {
+            document.removeEventListener("mousedown", onPointerDown);
+            document.removeEventListener("keydown", onKeyDown);
+            window.removeEventListener("resize", reflow);
+            document.removeEventListener("scroll", reflow, true);
+        };
+    }, [open]);
+
+    const status = value || "available";
+
+    return (
+        <div className="status-dropdown" onClick={(e) => e.stopPropagation()}>
+            <button
+                type="button"
+                ref={triggerRef}
+                className={`status-pill status-${status}${updating ? " updating" : ""}`}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-label="تغيير حالة العقار"
+                disabled={disabled || updating}
+                onClick={() => setOpen((v) => !v)}
+            >
+                <span className="status-pill-dot" />
+                <span className="status-pill-label">{STATUS_LABELS[status]}</span>
+                {updating ? (
+                    <span className="status-pill-spinner" />
+                ) : (
+                    <span className={`status-pill-chevron${open ? " open" : ""}`}>
+                        <ChevronIcon />
+                    </span>
+                )}
+            </button>
+
+            {open && (
+                <div ref={menuRef} className="status-menu" role="listbox" aria-label="حالة العقار">
+                    <p className="status-menu-title">حالة العقار</p>
+                    {STATUS_KEYS.map((key) => (
+                        <button
+                            key={key}
+                            type="button"
+                            role="option"
+                            aria-selected={key === status}
+                            className={`status-option${key === status ? " selected" : ""}`}
+                            onClick={() => {
+                                setOpen(false);
+                                if (key !== status) onChange(key);
+                            }}
+                        >
+                            <span className={`status-option-dot dot-${key}`} />
+                            <span className="status-option-text">
+                                <strong>{STATUS_LABELS[key]}</strong>
+                                <small>{STATUS_HINTS[key]}</small>
+                            </span>
+                            <span className="status-option-check">
+                                <TickIcon />
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 function getPropertyImage(p) {
     if (typeof p.image === "string" && p.image) return p.image;
@@ -138,6 +271,7 @@ export default function OwnerHome() {
     const [toast, setToast] = useState(null);
     const [deleteError, setDeleteError] = useState("");
     const [statusError, setStatusError] = useState("");
+    const [updatingId, setUpdatingId] = useState(null);
     const toastTimerRef = useRef(null);
 
     // ─── 1. جلب العقارات ───
@@ -223,6 +357,9 @@ export default function OwnerHome() {
     const handleStatusChange = async (property, newStatus) => {
         const prevStatus = property.status || "available";
 
+        setStatusError("");
+        setUpdatingId(property.id);
+
         // تحديث متفائل — بيرجع للقيمة السابقة إذا الـAPI رفض
         setProperties((prev) =>
             prev.map((p) => (p.id === property.id ? { ...p, status: newStatus } : p))
@@ -259,6 +396,8 @@ export default function OwnerHome() {
                 prev.map((p) => (p.id === property.id ? { ...p, status: prevStatus } : p))
             );
             setStatusError(err.message);
+        } finally {
+            setUpdatingId(null);
         }
     };
 
@@ -361,16 +500,11 @@ export default function OwnerHome() {
                                     <div className="listing-body">
                                         <div>
                                             <div className="listing-top-row">
-                                                <select
-                                                    className={`status-select status-${property.status || "available"}`}
-                                                    value={property.status || "available"}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    onChange={(e) => handleStatusChange(property, e.target.value)}
-                                                >
-                                                    {STATUS_KEYS.map((key) => (
-                                                        <option key={key} value={key}>{STATUS_LABELS[key]}</option>
-                                                    ))}
-                                                </select>
+                                                <StatusDropdown
+                                                    value={property.status}
+                                                    updating={updatingId === property.id}
+                                                    onChange={(next) => handleStatusChange(property, next)}
+                                                />
                                                 <button
                                                     className={`listing-save-btn${savedIds.has(String(property.id)) ? " active" : ""}`}
                                                     type="button"

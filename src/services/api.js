@@ -256,20 +256,33 @@ export async function setPropertyInterestEnabled(id, enabled) {
 }
 
 /* --------------------------------------------------------------------------
-   Interest Requests — US-17 / US-18 / US-19
+   Interest Requests — US-17 / US-18 / US-19 / Sprint 4
 
    US-17  POST /api/properties/{property_id}/interest-request
           ⚠️ بدون trailing slash — مع "/" بيرجع 404
           body فاضي · 201 Created · لازم role=tenant
    US-18  PUT  /api/interest-request/{request_id}/status
           body: { status: "approved" | "rejected" } · لازم صاحب العقار
+          ⚠️ Sprint 4: مع status=rejected صار rejection_reason إجباري
+          (أحد القيم بـ REJECTION_REASONS) + rejection_note اختياري (200 حرف)
    US-19  GET  /api/owner/interest-requests[?status=...]
           { results: [...], count } — طلبات عقارات المستخدم الحالي فقط
+   Sprint4 GET  /api/tenant/interest-requests[?status=...]
+          نفس الشكل بس من جهة المستأجر — request_code بكل الـ responses
    -------------------------------------------------------------------------- */
 export const INTEREST_REQUEST_STATUSES = ['pending', 'approved', 'rejected'];
 
 /* القيم اللي الـbackend بيقبلها في PUT /status — "pending" ما مقبول */
 const SETTABLE_STATUSES = ['approved', 'rejected'];
+
+/* slugs المسموحة عند الرفض — أي قيمة تانية بتعطي 400 validation */
+export const REJECTION_REASONS = [
+  'property_unavailable',
+  'payment_terms_not_compatible',
+  'rental_period_too_short',
+];
+
+export const REJECTION_NOTE_MAX = 200;
 
 /* رد الـbackend رجع IDs بس (tenant/property/owner) — بنوحّد الشكل مرة واحدة */
 export function normalizeInterestRequest(raw) {
@@ -277,10 +290,14 @@ export function normalizeInterestRequest(raw) {
   const status = String(raw.status || 'pending').toLowerCase();
   return {
     id: raw.id,
+    /* request_code: REQ-00001 — الطلبات القديمة بترجع "" فنرجع null */
+    requestCode: typeof raw.request_code === 'string' && raw.request_code ? raw.request_code : '',
     tenantId: raw.tenant ?? raw.tenant_id ?? null,
     propertyId: raw.property ?? raw.property_id ?? null,
     ownerId: raw.owner ?? raw.owner_id ?? null,
     status: INTEREST_REQUEST_STATUSES.includes(status) ? status : 'pending',
+    rejectionReason: typeof raw.rejection_reason === 'string' ? raw.rejection_reason : '',
+    rejectionNote: typeof raw.rejection_note === 'string' ? raw.rejection_note : '',
     createdAt: raw.created_at || raw.createdAt || '',
     updatedAt: raw.updated_at || raw.updatedAt || '',
     raw,
@@ -297,11 +314,23 @@ export async function setInterestRequestStatus(requestId, status, extra = {}) {
   if (!SETTABLE_STATUSES.includes(value)) {
     throw new Error(`حالة الطلب غير صالحة: ${status} — المسموح approved أو rejected فقط`);
   }
-  /* reason/message حق الرفض — الـbackend الحالي بيقبل status لحاله وبيتجاهلهم،
-     ولما يضيف الحقول بيصيروا محفوظين بدون أي تعديل بالواجهة */
+
   const payload = { status: value };
-  if (extra.reason) payload.reason = extra.reason;
-  if (extra.message) payload.message = extra.message;
+
+  if (value === 'rejected') {
+    const reason = String(extra.rejection_reason || '').trim();
+    if (!REJECTION_REASONS.includes(reason)) {
+      /* نمنع الطلب من عندنا بدل ما نستقبل 400 من الـbackend */
+      throw new Error('يجب اختيار سبب الرفض من القائمة قبل التأكيد.');
+    }
+    payload.rejection_reason = reason;
+
+    const note = String(extra.rejection_note || '').trim();
+    if (note) payload.rejection_note = note.slice(0, REJECTION_NOTE_MAX);
+  }
+  /* مع status=approved الـbackend بيتجاهل rejection_reason/rejection_note
+     حتى لو انبعتوا — فما بنبعتهم أصلاً */
+
   return apiFetch(`/api/interest-request/${requestId}/status`, {
     method: 'PUT',
     json: payload,
@@ -314,6 +343,14 @@ export async function fetchOwnerInterestRequests(status) {
     ? `?status=${String(status).toLowerCase()}`
     : '';
   return apiFetch(`/api/owner/interest-requests${qs}`);
+}
+
+/* US-Sprint4 — طلبات الاهتمام من جهة المستأجر (نفس شكل US-19) */
+export async function fetchTenantInterestRequests(status) {
+  const qs = INTEREST_REQUEST_STATUSES.includes(String(status || '').toLowerCase())
+    ? `?status=${String(status).toLowerCase()}`
+    : '';
+  return apiFetch(`/api/tenant/interest-requests${qs}`);
 }
 
 /* --------------------------------------------------------------------------
@@ -395,9 +432,12 @@ export async function googleLogin(idToken) {
    US-20 — بيانات التواصل لصاحب العقار
    GET /api/properties/{property_id}/contact/     (Bearer token مطلوب)
 
-   200 → { phone_number }               interest_enabled = false أو الطلب approved
+   200 → { phone_number, whatsapp_number }   interest_enabled = false أو الطلب approved
    403 → { message }                     interest_enabled = true والطلب مو approved
    401 → ما في session                   الزائر أو التوكن منتهي
+
+   whatsapp_number ممكن يكون null لو المالك ما حط رقم واتساب —
+   الواجهة بترجع تستعمله كـ fallback للرقم العادي.
 
    الدالة بترجع نتيجة جاهزة للعرض بدل Response عشان كل صفحة تتعامل مع
    الحالة بنفس الشكل: available · locked · unauthenticated · notfound · error
@@ -423,7 +463,7 @@ function contactMessageAr(data, fallback) {
 
 export async function fetchPropertyContact(propertyId) {
   if (propertyId === undefined || propertyId === null || propertyId === '') {
-    return { state: 'error', phone: '', message: 'تعذر تحديد العقار.', interestEnabled: null };
+    return { state: 'error', phone: '', whatsapp: '', message: 'تعذر تحديد العقار.', interestEnabled: null };
   }
 
   let res;
@@ -433,6 +473,7 @@ export async function fetchPropertyContact(propertyId) {
     return {
       state: 'error',
       phone: '',
+      whatsapp: '',
       message: 'تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.',
       interestEnabled: null,
     };
@@ -447,6 +488,8 @@ export async function fetchPropertyContact(propertyId) {
     return {
       state: 'available',
       phone: data?.phone_number || data?.phone || '',
+      /* ممكن null لو المالك ما حط واتساب — الواجهة بتعمل fallback للرقم */
+      whatsapp: data?.whatsapp_number || data?.whatsapp || '',
       message: '',
       interestEnabled,
     };
@@ -457,6 +500,7 @@ export async function fetchPropertyContact(propertyId) {
     return {
       state: 'locked',
       phone: '',
+      whatsapp: '',
       message: contactMessageAr(data, CONTACT_MESSAGES_AR[CONTACT_LOCKED_MESSAGE]),
       interestEnabled,
     };
@@ -466,29 +510,37 @@ export async function fetchPropertyContact(propertyId) {
     return {
       state: 'unauthenticated',
       phone: '',
+      whatsapp: '',
       message: contactMessageAr(data, 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.'),
       interestEnabled,
     };
   }
 
   if (res.status === 404) {
-    return { state: 'notfound', phone: '', message: 'العقار غير موجود.', interestEnabled };
+    return { state: 'notfound', phone: '', whatsapp: '', message: 'العقار غير موجود.', interestEnabled };
   }
 
   return {
     state: 'error',
     phone: '',
+    whatsapp: '',
     message: contactMessageAr(data, 'تعذر جلب بيانات التواصل، حاول مرة أخرى.'),
     interestEnabled,
   };
 }
 
 /* --------------------------------------------------------------------------
-   US-22 — الإشعارات (كل الـ endpoints تحتاج Bearer token)
-   GET   /api/notifications/                  قائمة إشعارات المستخدم
-   PATCH /api/notifications/{id}/read/        تحديد إشعار واحد كمقروء
-   PATCH /api/notifications/read-all/         تحديد كل الإشعارات كمقروءة
+   US-22 + Sprint 4 — الإشعارات (كل الـ endpoints تحتاج Bearer token)
+   GET   /api/notifications/?filter=...        قائمة إشعارات المستخدم
+         filter: بدونه أو all = الكل · unread = غير المقروءة ·
+                 أو نوع الإشعار (interest_request مثلاً)
+   PATCH /api/notifications/{id}/read/         تحديد إشعار واحد كمقروء
+   PATCH /api/notifications/mark-all-read/     تحديد كل الإشعارات كمقروءة
+         (Sprint 4 — بنرجع تلقائياً للمسار القديم read-all/ لو ما زال متاح)
    -------------------------------------------------------------------------- */
+
+/* قيم filter المسموحة بالـquery — أي قيمة تانية ما بنبعتها */
+const NOTIFICATION_FILTER_RE = /^[a-z0-9_]+$/i;
 
 /* الـbackend بيرجّع القيم بأشكال مختلفة — بنوحّدها للفلاتر في الواجهة */
 const NOTIFICATION_STATUS_MAP = {
@@ -549,10 +601,17 @@ function extractNotificationList(data) {
   return raw.map(normalizeNotification).filter(Boolean);
 }
 
-export async function fetchNotifications() {
+/* filter: 'all' (أو فاضي) → بدون query · 'unread' أو نوع الإشعار → ?filter=... */
+export async function fetchNotifications(filter) {
+  const value = String(filter || '').trim().toLowerCase();
+  const qs =
+    value && value !== 'all' && NOTIFICATION_FILTER_RE.test(value)
+      ? `?filter=${encodeURIComponent(value)}`
+      : '';
+
   let res;
   try {
-    res = await apiFetch('/api/notifications/');
+    res = await apiFetch(`/api/notifications/${qs}`);
   } catch {
     return { state: 'error', items: [], message: 'تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.' };
   }
@@ -562,6 +621,14 @@ export async function fetchNotifications() {
       state: 'unauthenticated',
       items: [],
       message: 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.',
+    };
+  }
+
+  if (res.status === 403) {
+    return {
+      state: 'error',
+      items: [],
+      message: 'ليس لديك صلاحية لعرض الإشعارات.',
     };
   }
 
@@ -579,7 +646,13 @@ export async function markNotificationRead(id) {
 }
 
 export async function markAllNotificationsRead() {
-  return apiFetch('/api/notifications/read-all/', { method: 'PATCH' });
+  /* Sprint 4: المسار الرسمي mark-all-read/ — لو الباك لسا على المسار القديم
+     (404/405) بنجرب read-all/ تلقائياً عشان الزر ما يفشل عند المستخدم */
+  const res = await apiFetch('/api/notifications/mark-all-read/', { method: 'PATCH' });
+  if (res.status === 404 || res.status === 405) {
+    return apiFetch('/api/notifications/read-all/', { method: 'PATCH' });
+  }
+  return res;
 }
 
 export function accountTypeToApi(value) {

@@ -17,11 +17,15 @@ const REQUEST_ERROR_AR = {
     'You do not have permission to perform this action.': 'ما إلك صلاحية على هذا الطلب — الإجراء متاح لصاحب العقار فقط.',
     'Status must be approved or rejected.': 'حالة الطلب غير صالحة.',
     'This field is required.': 'حالة الطلب مطلوبة.',
+    'This field is required when rejecting a request.': 'يجب اختيار سبب الرفض قبل التأكيد.',
 };
 
 function describeRequestError(status, data, { forList = false } = {}) {
     const detail = typeof data?.detail === 'string' ? data.detail : '';
-    const fieldMsg = Array.isArray(data?.status) ? data.status[0] : '';
+    const fieldMsg =
+        (Array.isArray(data?.rejection_reason) && data.rejection_reason[0]) ||
+        (Array.isArray(data?.status) && data.status[0]) ||
+        '';
     const raw = fieldMsg || detail;
     if (REQUEST_ERROR_AR[raw]) return REQUEST_ERROR_AR[raw];
     if (status === 401) return 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.';
@@ -66,11 +70,14 @@ function mapRequest(request, propertyMap) {
     return {
         id: request.id,
         orderNum: `#${String(request.id ?? 0).padStart(4, '0')}`,
-        reqCode: `REQ-${request.id}`,
+        /* request_code من الـapi (REQ-00001) — الطلبات القديمة "" فنرجع للصيغة القديمة */
+        reqCode: request.requestCode || `REQ-${request.id}`,
         submittedAt: formatFullDate(request.createdAt),
         requestTime: formatNotificationTime(request.createdAt) || '—',
         status: request.status,
         statusLabel: STATUS_LABEL[request.status] || STATUS_LABEL.pending,
+        rejectionReason: request.rejectionReason || '',
+        rejectionNote: request.rejectionNote || '',
         tenantName,
         tenantAvatar: resolveMediaUrl(tenantObject?.profile_image || tenantObject?.image || '') || defaultAvatar,
         propertyId: request.propertyId,
@@ -80,22 +87,16 @@ function mapRequest(request, propertyMap) {
     };
 }
 
-/* أسباب الرفض — بتترسل مع الطلب مثل ما كانت قبل، والـbackend بيقراها
-   لما يضيف الحقول (حالياً بيقبل status لحاله وبيتجاهل الباقي) */
+/* ⚠️ Sprint 4 — مع status=rejected صار rejection_reason إجباري بالـapi،
+   والقيم slugs محددة: أي قيمة تانية بتعطي 400.
+   rejection_note حر اختياري بحد أقصى 200 حرف */
 const REASON_OPTIONS = [
-    'العقار لم يعد متاحاً',
-    'الدفوعات غير متوافقة',
-    'فترة الإيجار قصيرة',
-    'تم تأجير العقار لمستأجر آخر',
-    'السعر خارج الميزانية المتاحة',
-    'أخرى',
+    { value: 'property_unavailable', label: 'العقار لم يعد متاحاً' },
+    { value: 'payment_terms_not_compatible', label: 'شروط الدفع غير متوافقة' },
+    { value: 'rental_period_too_short', label: 'فترة الإيجار أقصر من المطلوب' },
 ];
 
-const QUICK_REASONS = [
-    'العقار لم يعد متاحاً',
-    'الدفوعات غير متوافقة',
-    'فترة الإيجار قصيرة',
-];
+const QUICK_REASONS = REASON_OPTIONS;
 
 const MESSAGE_MAX = 200;
 
@@ -211,8 +212,8 @@ const [acceptTarget, setAcceptTarget] = useState(null);
     /* US-18 — PUT /api/interest-request/{id}/status { status: "approved" | "rejected" }
        200 → الطلب اتحدث + إشعار فوري للمستأجر. بنحدّث الصف من رد الـapi، وبعدها
        refetch صامت عشان نضمن مطابقة الخادم.
-       السبب والرسالة بنترسلهم مع الرفض (reason + message) — حالياً الـbackend
-       بيقبل status لحاله وبيتجاهلهم، ولما يضيف الحقول بيصيروا محفوظين. */
+       ⚠️ Sprint 4: الرفض لازم يرسل rejection_reason (slug من الثلاث قيم) —
+       setInterestRequestStatus بيرمي خطأ عربي إذا كان فاضي فما بيوصل 400 أصلاً. */
     async function updateStatus(target, status) {
         if (!target || savingId != null) return;
         setSavingId(target.id);
@@ -220,7 +221,7 @@ const [acceptTarget, setAcceptTarget] = useState(null);
         try {
             const extra =
                 status === 'rejected'
-                    ? { reason: rejectReason || undefined, message: rejectMessage || undefined }
+                    ? { rejection_reason: rejectReason, rejection_note: rejectMessage }
                     : {};
             const res = await setInterestRequestStatus(target.id, status, extra);
             const data = await res.json().catch(() => null);
@@ -269,7 +270,7 @@ const [acceptTarget, setAcceptTarget] = useState(null);
     function exportCsv() {
         const header = ['رقم الطلب', 'اسم المستأجر', 'العقار', 'المنطقة', 'تاريخ الطلب', 'الحالة', 'الرسالة'];
         const rows = filtered.map((r) => [
-            r.orderNum,
+            r.reqCode,
             r.tenantName,
             r.propertyTitle,
             r.region,
@@ -395,7 +396,7 @@ const [acceptTarget, setAcceptTarget] = useState(null);
                     {selected && (
                         <aside className="oreq-details">
                             <div className="oreq-details-top">
-                                <span className="oreq-order-num">تفاصيل الطلب {selected.orderNum}</span>
+                                <span className="oreq-order-num">تفاصيل الطلب {selected.reqCode}</span>
                                 <span className={`oreq-status ${selected.status}`}>
                                     <span className="oreq-status-dot" />
                                     {selected.statusLabel}
@@ -435,6 +436,20 @@ const [acceptTarget, setAcceptTarget] = useState(null);
                                         {selected.statusLabel}
                                     </span>
                                 </div>
+                                {selected.rejectionReason && (
+                                    <div className="oreq-info-item">
+                                        <span className="oreq-info-label">سبب الرفض</span>
+                                        <span className="oreq-info-val">
+                                            {REASON_OPTIONS.find((o) => o.value === selected.rejectionReason)?.label || selected.rejectionReason}
+                                        </span>
+                                    </div>
+                                )}
+                                {selected.rejectionNote && (
+                                    <div className="oreq-info-item">
+                                        <span className="oreq-info-label">ملاحظة الرفض</span>
+                                        <span className="oreq-info-val">{selected.rejectionNote}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="oreq-message">
@@ -521,7 +536,7 @@ const [acceptTarget, setAcceptTarget] = useState(null);
 
                         <div className="oreq-field">
                             <label className="oreq-label" htmlFor="oreq-reason">
-                                سبب الرفض <span>(اختياري لمساعدة المستأجر)</span>
+                                سبب الرفض <span>(إلزامي — حدد سبباً من القائمة)</span>
                             </label>
                             <div className="oreq-select-wrap">
                                 <select
@@ -530,10 +545,10 @@ const [acceptTarget, setAcceptTarget] = useState(null);
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
                                 >
-                                    <option value="">حدد سبب الاعتذار من القائمة...</option>
+                                    <option value="">حدد سبب الرفض من القائمة...</option>
                                     {REASON_OPTIONS.map((reason) => (
-                                        <option key={reason} value={reason}>
-                                            {reason}
+                                        <option key={reason.value} value={reason.value}>
+                                            {reason.label}
                                         </option>
                                     ))}
                                 </select>
@@ -548,11 +563,11 @@ const [acceptTarget, setAcceptTarget] = useState(null);
                             <div className="oreq-quick__list">
                                 {QUICK_REASONS.map((reason) => (
                                     <button
-                                        key={reason}
-                                        className={`oreq-pill ${rejectQuick === reason ? 'active' : ''}`}
-                                        onClick={() => pickQuickReason(reason)}
+                                        key={reason.value}
+                                        className={`oreq-pill ${rejectQuick === reason.value ? 'active' : ''}`}
+                                        onClick={() => pickQuickReason(reason.value)}
                                     >
-                                        {reason}
+                                        {reason.label}
                                     </button>
                                 ))}
                             </div>
@@ -561,7 +576,7 @@ const [acceptTarget, setAcceptTarget] = useState(null);
                         <div className="oreq-field">
                             <div className="oreq-label-row">
                                 <label className="oreq-label" htmlFor="oreq-note">
-                                    رسالة توضيحية للمستأجر <span>(اختياري لتعزيز الشفافية)</span>
+                                    ملاحظة توضيحية للمستأجر <span>(اختياري — حتى 200 حرف)</span>
                                 </label>
                                 <span
                                     className={`oreq-counter ${rejectMessage.length >= MESSAGE_MAX ? 'full' : ''}`}

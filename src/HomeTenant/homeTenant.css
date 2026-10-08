@@ -435,7 +435,7 @@ img {
 .lp-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(10, 37, 64, 0.55) 0%, rgba(10, 37, 64, 0.85) 100%);
+  background: linear-gradient(180deg, rgba(10, 37, 64, 0.25) 0%, rgba(10, 37, 64, 0.5) 100%);
 }
 
 .lp-hero-content {
@@ -448,7 +448,9 @@ img {
 .lp-hero-content h1 {
   font-size: clamp(28px, 4vw, 44px);
   font-weight: 800;
+  font-family: "Simplified Arabic", "Tajawal", "Segoe UI", Tahoma, sans-serif;
   color: var(--lp-white);
+  text-shadow: 0 2px 12px rgba(10, 37, 64, 0.45);
   margin-bottom: 16px;
   line-height: 1.4;
 }
@@ -456,6 +458,7 @@ img {
 .lp-hero-content p {
   font-size: clamp(15px, 2vw, 18px);
   color: #dbe4f0;
+  text-shadow: 0 1px 8px rgba(10, 37, 64, 0.5);
   margin-bottom: 32px;
   line-height: 1.8;
 }

@@ -5,7 +5,7 @@
 /* ─── Hero Section ─── */
 .props-hero {
   position: relative;
-  background: linear-gradient(rgba(10, 37, 64, 0.82), rgba(10, 37, 64, 0.85)),
+  background: linear-gradient(rgba(10, 37, 64, 0.25), rgba(10, 37, 64, 0.5)),
     url('../components/home.jpg') center/cover no-repeat;
   padding: 64px 20px 70px;
   min-height: 380px;
@@ -32,7 +32,9 @@
 .props-hero-content h1 {
   font-size: clamp(26px, 4vw, 42px);
   font-weight: 800;
+  font-family: "Simplified Arabic", "Tajawal", "Segoe UI", Tahoma, sans-serif;
   color: #ffffff;
+  text-shadow: 0 2px 12px rgba(10, 37, 64, 0.45);
   margin-bottom: 12px;
   line-height: 1.4;
 }
@@ -40,6 +42,7 @@
 .props-hero-content p {
   font-size: clamp(14px, 2vw, 17px);
   color: #dbe4f0;
+  text-shadow: 0 1px 8px rgba(10, 37, 64, 0.5);
   margin-bottom: 28px;
   line-height: 1.8;
 }
